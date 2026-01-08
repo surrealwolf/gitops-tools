@@ -13,7 +13,7 @@ spec:
       # NOTE: Runner groups are optional - organization-level runners work without them
       # If you want to use runner groups, create one in GitHub org settings first,
       # then add: runnerGroup: <group-name>
-      organization: surrealwolf
+      organization: DataKnife
       
       # Optional: Assign to a runner group for better access control
       # runnerGroup: default
