@@ -43,7 +43,7 @@ spec:
   # Storage configuration
   storage:
     size: 20Gi
-    storageClass: ""  # Use default storage class
+    storageClass: "truenas-nfs"  # Use truenas-nfs storage class
   
   # Resource requests and limits
   resources:
