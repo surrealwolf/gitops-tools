@@ -22,9 +22,10 @@ spec:
           notary: notary.harbor.dataknife.net
         className: nginx
         annotations:
-          cert-manager.io/cluster-issuer: "letsencrypt-prod"
           nginx.ingress.kubernetes.io/ssl-redirect: "true"
           nginx.ingress.kubernetes.io/proxy-body-size: "0"
+          # Note: TLS secret 'harbor-tls' must be created manually for internal DNS
+          # Use self-signed or internal CA certificate since Let's Encrypt requires public DNS
     externalURL: https://harbor.dataknife.net
     harborAdminPassword: "Harbor12345"
     database:
