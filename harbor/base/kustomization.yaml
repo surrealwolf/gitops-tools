@@ -6,6 +6,7 @@ namespace: managed-tools
 resources:
   - namespace.yaml
   - harbor-helmchart.yaml
+  - harbor-helmchartconfig.yaml
 
 commonLabels:
   app: harbor
