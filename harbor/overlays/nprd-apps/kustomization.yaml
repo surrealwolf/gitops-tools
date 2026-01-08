@@ -4,7 +4,7 @@ kind: Kustomization
 namespace: managed-tools
 
 resources:
-  - harbor/base
+  - ../../base
 
 # Cluster-specific overrides for nprd-apps
 # Add any nprd-apps specific configurations here
