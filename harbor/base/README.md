@@ -96,12 +96,57 @@ kubectl create secret tls wildcard-dataknife-net-tls \
 - For self-signed certificates, clients will need to trust the certificate or CA
 - The wildcard certificate approach allows reuse across multiple services in the cluster
 
-## Default Credentials
+## Credentials Management
 
-**⚠️ CHANGE THESE IN PRODUCTION!**
+**⚠️ Passwords are no longer stored in plaintext in the HelmChart!**
 
+The Harbor HelmChart has been configured to use empty passwords by default. You must create a Kubernetes Secret with the credentials:
+
+### Quick Setup
+
+```bash
+# Create the secret interactively
+./scripts/create-harbor-secrets.sh
+
+# Or create manually
+kubectl create secret generic harbor-credentials \
+  --from-literal=harborAdminPassword='<your-password>' \
+  --from-literal=databasePassword='<your-db-password>' \
+  -n managed-tools
+```
+
+### Using the Credentials
+
+After creating the secret, you have two options:
+
+**Option 1: Update HelmChartConfig** (Recommended for manual setup)
+```bash
+# Extract passwords and update harbor-helmchartconfig.yaml
+./scripts/update-harbor-passwords.sh
+# Then apply the updated HelmChartConfig
+kubectl apply -f harbor/base/harbor-helmchartconfig.yaml
+```
+
+**Option 2: Use Sealed Secrets** (Recommended for GitOps)
+Install Sealed Secrets and create encrypted secrets that can be committed to Git:
+```bash
+# Install Sealed Secrets controller (if not already installed)
+kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.0/controller.yaml
+
+# Create a SealedSecret from the regular secret
+kubectl create secret generic harbor-credentials \
+  --from-literal=harborAdminPassword='<password>' \
+  --from-literal=databasePassword='<password>' \
+  -n managed-tools \
+  --dry-run=client -o yaml | kubectl seal -o yaml > harbor/base/harbor-credentials-sealed.yaml
+```
+
+### Default Credentials (Development Only)
+
+For initial setup, you can use these defaults (CHANGE IN PRODUCTION!):
 - Harbor Admin Username: `admin`
-- Harbor Admin Password: `Harbor12345` (set in `harbor-helmchart.yaml`)
+- Harbor Admin Password: Set via secret
+- Database Password: Set via secret
 
 ## Deployment
 

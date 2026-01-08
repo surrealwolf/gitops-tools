@@ -27,11 +27,17 @@ spec:
           # Note: TLS secret 'wildcard-dataknife-net-tls' must be created manually for internal DNS
           # Use the generate-wildcard-cert.sh script to create a cluster-wide wildcard certificate
     externalURL: https://harbor.dataknife.net
-    harborAdminPassword: "Harbor12345"
+    # Harbor admin password - MUST be set via harbor-credentials secret
+    # Create secret using: ./scripts/create-harbor-secrets.sh
+    # Or manually: kubectl create secret generic harbor-credentials -n managed-tools --from-literal=harborAdminPassword=<password>
+    harborAdminPassword: ""
+    # Database configuration
     database:
       type: postgresql
       internal:
-        password: "root123"
+        # Database password - MUST be set via harbor-credentials secret
+        # The secret will be mounted and password read from it
+        password: ""
         database: "registry"
         maxIdleConns: 50
         maxOpenConns: 100

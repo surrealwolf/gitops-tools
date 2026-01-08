@@ -1,0 +1,17 @@
+# HelmChartConfig to override Harbor values with secrets
+# This allows us to keep passwords out of the main HelmChart
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: harbor
+  namespace: managed-tools
+spec:
+  valuesContent: |-
+    # Override passwords from harbor-credentials secret
+    # Note: HelmChartConfig doesn't support direct secret references
+    # You need to manually update these values after creating the secret
+    # Or use the update-harbor-passwords.sh script
+    harborAdminPassword: ""
+    database:
+      internal:
+        password: ""
