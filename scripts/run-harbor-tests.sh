@@ -6,13 +6,19 @@ set -e
 
 # Load .env file if it exists
 if [ -f .env ]; then
-    set -a
-    source .env
-    set +a
+    # Read .env file line by line to handle $ characters properly
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip comments and empty lines
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${line// }" ]] && continue
+        # Export the variable (this preserves $ characters)
+        export "$line" 2>/dev/null || true
+    done < .env
 fi
 
 HARBOR_URL="${HARBOR_REGISTRY_URL:-harbor.dataknife.net}"
-ROBOT_USER="${HARBOR_ROBOT_ACCOUNT_FULL_NAME}"
+# Read robot account directly from .env to preserve $ character
+ROBOT_USER=$(grep "^HARBOR_ROBOT_ACCOUNT_FULL_NAME=" .env 2>/dev/null | cut -d'=' -f2- || echo "${HARBOR_ROBOT_ACCOUNT_FULL_NAME}")
 ROBOT_PASS="${HARBOR_ROBOT_ACCOUNT_SECRET}"
 
 CERT_FILE="/etc/docker/certs.d/${HARBOR_URL}/ca.crt"
