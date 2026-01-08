@@ -7,3 +7,7 @@ metadata:
     purpose: managed-kubernetes-tools
     app: harbor
     managed-by: gitops
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: gitops-tools-nprd-apps-harbor-base
+    meta.helm.sh/release-namespace: managed-tools
