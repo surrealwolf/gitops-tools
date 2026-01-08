@@ -19,7 +19,7 @@ spec:
       ingress:
         hosts:
           core: harbor.dataknife.net
-          notary: notary.harbor.dataknife.net
+          notary: notary.dataknife.net
         className: nginx
         annotations:
           nginx.ingress.kubernetes.io/ssl-redirect: "true"
