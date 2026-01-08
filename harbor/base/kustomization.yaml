@@ -5,16 +5,7 @@ namespace: managed-tools
 
 resources:
   - namespace.yaml
-  # Harbor deployment manifests will be added here
-  # Example structure:
-  # - harbor-core.yaml
-  # - harbor-database.yaml
-  # - harbor-redis.yaml
-  # - harbor-registry.yaml
-  # - harbor-jobservice.yaml
-  # - harbor-portal.yaml
-  # - harbor-chartmuseum.yaml
-  # - harbor-notary.yaml
+  - harbor-helmchart.yaml
 
 commonLabels:
   app: harbor

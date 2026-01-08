@@ -1,0 +1,120 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: harbor
+  namespace: managed-tools
+spec:
+  chart: harbor
+  repo: https://helm.goharbor.io
+  targetNamespace: managed-tools
+  valuesContent: |-
+    expose:
+      type: ingress
+      tls:
+        enabled: true
+        certSource: secret
+        secret:
+          secretName: harbor-tls
+          notarySecretName: harbor-tls
+      ingress:
+        hosts:
+          core: harbor.dataknife.net
+          notary: notary.harbor.dataknife.net
+        className: nginx
+        annotations:
+          cert-manager.io/cluster-issuer: "letsencrypt-prod"
+          nginx.ingress.kubernetes.io/ssl-redirect: "true"
+          nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    externalURL: https://harbor.dataknife.net
+    harborAdminPassword: "Harbor12345"
+    database:
+      type: postgresql
+      internal:
+        password: "root123"
+        database: "registry"
+        maxIdleConns: 50
+        maxOpenConns: 100
+    redis:
+      type: internal
+      internal:
+        password: ""
+    persistence:
+      enabled: true
+      resourcePolicy: "keep"
+      persistentVolumeClaim:
+        registry:
+          storageClass: ""
+          accessMode: ReadWriteOnce
+          size: 5Gi
+        chartmuseum:
+          storageClass: ""
+          accessMode: ReadWriteOnce
+          size: 5Gi
+        jobservice:
+          storageClass: ""
+          accessMode: ReadWriteOnce
+          size: 1Gi
+        database:
+          storageClass: ""
+          accessMode: ReadWriteOnce
+          size: 1Gi
+        redis:
+          storageClass: ""
+          accessMode: ReadWriteOnce
+          size: 1Gi
+        trivy:
+          storageClass: ""
+          accessMode: ReadWriteOnce
+          size: 5Gi
+    core:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    jobservice:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    registry:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+    chartmuseum:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    trivy:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    notary:
+      enabled: true
+    logLevel: info
+    metrics:
+      enabled: false
