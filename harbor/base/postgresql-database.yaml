@@ -9,7 +9,9 @@ metadata:
     managed-by: gitops
 spec:
   # Reference to the CloudNativePG cluster
-  cluster: harbor-postgresql
+  # cluster must be a LocalObjectReference (object with name field)
+  cluster:
+    name: harbor-postgresql
   # Database name (already created by bootstrap.initdb, but this ensures it's managed)
   name: registry
   # Owner of the database (created by bootstrap.initdb.owner)
