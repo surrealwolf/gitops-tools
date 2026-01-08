@@ -1,6 +1,12 @@
 #!/bin/bash
 # Update Harbor HelmChartConfig with passwords from secret
-# This allows Harbor to deploy with actual passwords
+# 
+# NOTE: This script is DEPRECATED. The Harbor HelmChart now uses existingSecret
+# to reference the harbor-credentials secret directly. This script is only needed
+# if existingSecret doesn't work for your Harbor version and you need to use
+# HelmChartConfig instead.
+#
+# The recommended approach is to create the secret and let Harbor use it via existingSecret.
 
 set -e
 

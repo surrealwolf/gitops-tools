@@ -117,17 +117,20 @@ kubectl create secret generic harbor-credentials \
 
 ### Using the Credentials
 
-After creating the secret, you have two options:
-
-**Option 1: Update HelmChartConfig** (Recommended for manual setup)
+After creating the secret, the Harbor HelmChart is configured to use the `harbor-credentials` secret directly via `existingSecret`. 
+No HelmChartConfig is required for passwords - just ensure the secret exists:
 ```bash
-# Extract passwords and update harbor-helmchartconfig.yaml
-./scripts/update-harbor-passwords.sh
-# Then apply the updated HelmChartConfig
-kubectl apply -f harbor/base/harbor-helmchartconfig.yaml
+# Create the secret (if not already created)
+./scripts/create-harbor-secrets.sh
+
+# The Harbor HelmChart will automatically use the secret
+# The secret must contain these keys:
+#   - harborAdminPassword: Harbor admin password
+#   - databasePassword: PostgreSQL database password
+#   - redisPassword: Redis password (optional, can be empty)
 ```
 
-**Option 2: Use Sealed Secrets** (Recommended for GitOps)
+**Alternative: Use Sealed Secrets** (Recommended for GitOps)
 Install Sealed Secrets and create encrypted secrets that can be committed to Git:
 ```bash
 # Install Sealed Secrets controller (if not already installed)

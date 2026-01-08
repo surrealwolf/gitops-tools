@@ -143,10 +143,52 @@ kubectl get ingress -n managed-tools
 
 This repository follows GitOps principles. Changes to manifests in this repository will be automatically applied to the cluster by your GitOps operator (e.g., ArgoCD, Flux, Rancher Fleet).
 
-The GitOps connection is configured to:
-- Monitor the `harbor/base` path
-- Deploy resources to the `managed-tools` namespace on the `nprd-apps` cluster
-- Automatically sync changes when commits are pushed to the main branch
+### Fleet GitOps Configuration
+
+For Rancher Fleet, configure your GitRepo resource to monitor one of these paths:
+
+**Option 1: Monitor overlay directory (Recommended)**
+```yaml
+spec:
+  repo: <your-repo-url>
+  branch: main
+  paths:
+    - harbor/overlays/nprd-apps
+```
+This will use the overlay with cluster-specific targeting configured in `fleet.yaml`.
+
+**Option 2: Monitor root directory**
+```yaml
+spec:
+  repo: <your-repo-url>
+  branch: main
+  # No paths specified, or paths: ["harbor"]
+```
+Fleet will create bundles for each directory. The overlay's `fleet.yaml` will handle cluster targeting.
+
+**Option 3: Monitor base directory (Not Recommended)**
+```yaml
+spec:
+  repo: <your-repo-url>
+  branch: main
+  paths:
+    - harbor/base
+```
+⚠️ This will deploy to ALL clusters unless you configure cluster targeting in the base `fleet.yaml`.
+
+### Cluster Targeting
+
+The `harbor/overlays/nprd-apps/fleet.yaml` file contains cluster targeting configuration. Update the `clusterSelector.matchLabels` to match your nprd-apps cluster labels in Rancher.
+
+To find your cluster labels:
+```bash
+kubectl get clusters.management.cattle.io -o yaml | grep -A 10 labels
+```
+
+Common label patterns:
+- `managed.cattle.io/cluster-name: nprd-apps`
+- `cluster-name: nprd-apps`
+- `environment: nprd`
 
 ## Security
 
@@ -175,7 +217,21 @@ kubectl get secrets -n managed-tools
 
 **Harbor not deploying:**
 ```bash
-# Check Fleet status
+# Check Fleet GitRepo status
 kubectl get gitrepo -n fleet-default
-kubectl describe bundle -n fleet-default gitops-tools-nprd-apps-harbor-base
+kubectl describe gitrepo <your-gitrepo-name> -n fleet-default
+
+# Check Fleet Bundle status
+kubectl get bundle -n fleet-default
+kubectl describe bundle -n fleet-default
+
+# Check for bundle targeting issues
+kubectl get bundle -n fleet-default -o yaml | grep -A 20 targetCustomizations
+
+# Verify cluster labels match fleet.yaml
+kubectl get clusters.management.cattle.io -o yaml | grep -A 10 labels
+
+# Check HelmChart status
+kubectl get helmchart -n managed-tools
+kubectl describe helmchart harbor -n managed-tools
 ```

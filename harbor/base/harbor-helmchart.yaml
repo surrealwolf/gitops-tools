@@ -30,21 +30,33 @@ spec:
     # Harbor admin password - MUST be set via harbor-credentials secret
     # Create secret using: ./scripts/create-harbor-secrets.sh
     # Or manually: kubectl create secret generic harbor-credentials -n managed-tools --from-literal=harborAdminPassword=<password>
-    harborAdminPassword: ""
+    # Using existingSecret to reference the harbor-credentials secret
+    # The secret must contain the key 'harborAdminPassword'
+    existingSecret: harbor-credentials
+    # Secret key name for admin password (must match the key in the secret)
+    secretKey: harborAdminPassword
     # Database configuration
     database:
       type: postgresql
       internal:
         # Database password - MUST be set via harbor-credentials secret
-        # The secret will be mounted and password read from it
-        password: ""
+        # Using existingSecret to reference the harbor-credentials secret
+        # The secret must contain the key 'databasePassword'
+        existingSecret: harbor-credentials
+        # Secret key name for database password (must match the key in the secret)
+        secretKey: databasePassword
         database: "registry"
         maxIdleConns: 50
         maxOpenConns: 100
     redis:
       type: internal
       internal:
-        password: ""
+        # Redis password - optional, set via harbor-credentials secret if needed
+        # Using existingSecret to reference the harbor-credentials secret
+        # The secret must contain the key 'redisPassword' (can be empty string)
+        existingSecret: harbor-credentials
+        # Secret key name for redis password (must match the key in the secret)
+        secretKey: redisPassword
     persistence:
       enabled: true
       resourcePolicy: "keep"
