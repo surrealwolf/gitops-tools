@@ -35,5 +35,5 @@ certs/
 .env.local
 # Harbor secret files with actual passwords
 harbor/base/harbor-secrets.yaml
-harbor/base/harbor-helmchartconfig.yaml
 harbor/base/harbor-secret-patch.yaml
+# Note: harbor-helmchartconfig.yaml is now safe (no passwords) and is committed

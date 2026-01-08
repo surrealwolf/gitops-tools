@@ -1,0 +1,19 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: harbor
+  namespace: managed-tools
+spec:
+  valuesContent: |-
+    # This file is optional and can be used for cluster-specific overrides
+    # Passwords are now handled via existingSecret in harbor-helmchart.yaml
+    # No passwords should be stored in this file
+    # 
+    # If you need to override other Harbor values for this cluster,
+    # add them here. For example:
+    # core:
+    #   replicas: 2
+    # persistence:
+    #   persistentVolumeClaim:
+    #     registry:
+    #       size: 10Gi
