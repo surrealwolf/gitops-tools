@@ -45,7 +45,9 @@ spec:
     spec:
       containers:
       - name: wazuh-indexer
-        image: wazuh/wazuh-indexer:4.14.0
+        image: wazuh/wazuh-indexer:4.13.1
+        # Using 4.13.1 instead of 4.14.0 due to x86-64-v2 CPU requirement in 4.14.0
+        # Cluster nodes don't support x86-64-v2, causing "Fatal glibc error"
         # Add configuration, volumes, resources, etc.
         # Refer to official Wazuh Kubernetes manifests
   volumeClaimTemplates:
