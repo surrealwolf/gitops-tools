@@ -6,7 +6,7 @@ metadata:
 spec:
   scaleTargetRef:
     name: github-runner-deployment
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 10
   metrics:
     # Scale based on percentage of runners in use
