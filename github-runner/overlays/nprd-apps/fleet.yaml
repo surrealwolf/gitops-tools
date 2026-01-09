@@ -1,19 +1,21 @@
-# Fleet configuration for GitHub Runner Controller base
-# This file configures the base GitHub Runner Controller bundle
+# Fleet configuration for nprd-apps cluster
+# This file configures how Fleet deploys GitHub Runner Controller to the nprd-apps cluster
 #
-# NOTE: This base bundle should typically NOT be deployed directly.
-# It's meant to be used by overlays (e.g., github-runner/overlays/nprd-apps).
+# Fleet will use this configuration when the GitRepo monitors:
+# - The root directory (creates bundles for each directory)
+# - Or specifically the github-runner/overlays/nprd-apps path
 #
-# If your GitRepo monitors github-runner/base directly:
-# - This bundle will be deployed to ALL clusters (unless you add cluster targeting)
-# - Consider monitoring github-runner/overlays/nprd-apps instead
-#
-# If your GitRepo monitors the root:
-# - Fleet will create separate bundles for base and overlays
-# - Overlays will use their own fleet.yaml for cluster targeting
+# If your GitRepo monitors github-runner/base, it won't see this overlay.
+# In that case, either:
+# 1. Change GitRepo to monitor github-runner/overlays/nprd-apps
+# 2. Or change GitRepo to monitor root and use fleet.yaml for targeting
 
 defaultNamespace: managed-cicd
 
-# Uncomment below to prevent this base bundle from being deployed
-# (only allow overlays to use it)
-# targetCustomizations: []
+# Target this bundle to the nprd-apps cluster
+targetCustomizations:
+  - name: nprd-apps
+    clusterSelector:
+      matchLabels:
+        # Target nprd-apps cluster by display name
+        management.cattle.io/cluster-display-name: nprd-apps
