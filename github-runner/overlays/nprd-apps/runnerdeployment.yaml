@@ -8,17 +8,19 @@ spec:
   replicas: 1
   template:
     spec:
-      # Repository-level runner (attached to a specific repository)
-      # Repository-level runners always have access to the repository
-      # This avoids runner group access issues with organization-level runners
-      repository: DataKnifeAI/gitops-tools
+      # Organization-level runner (available to all repos in org)
+      # Runners are assigned to a runner group for access control
+      # The runner group must be created in GitHub UI first:
+      # Settings > Actions > Runner groups > New runner group
+      organization: DataKnifeAI
       
-      # Alternative: Organization-level runner (available to all repos in org)
-      # NOTE: Organization runners require runner group access configuration
-      # If using org-level, ensure the repository has access to the runner group:
-      # Settings > Actions > Runner groups > [Group Name] > Repository access
-      # organization: DataKnifeAI
-      # runnerGroup: default  # Optional: assign to a specific group
+      # Runner group name (must exist in GitHub org settings)
+      # Create this group in: https://github.com/organizations/DataKnifeAI/settings/actions/runners
+      # Configure it to allow "All repositories" or select specific repos
+      runnerGroup: kubernetes-runners
+      
+      # Alternative: Repository-level runner (attached to a specific repository)
+      # repository: DataKnifeAI/gitops-tools
       
       # Alternative: Enterprise-level runner (available across enterprise)
       # enterprise: <YOUR_ENTERPRISE_NAME>
