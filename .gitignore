@@ -36,4 +36,4 @@ certs/
 # Harbor secret files with actual passwords
 harbor/base/harbor-secrets.yaml
 harbor/base/harbor-secret-patch.yaml
-# Note: harbor-helmchartconfig.yaml is now safe (no passwords) and is committed
+# Note: harbor-helmchartconfig.yaml is now safe (no passwords) and is committed# HelmChartConfig should NOT be committed - it contains the token
