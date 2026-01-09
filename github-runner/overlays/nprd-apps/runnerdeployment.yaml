@@ -17,7 +17,8 @@ spec:
       # Runner group name (must exist in GitHub org settings)
       # Create this group in: https://github.com/organizations/DataKnifeAI/settings/actions/runners
       # Configure it to allow "All repositories" or select specific repos
-      runnerGroup: NRPD Auto Scale
+      # Note: Some ARC versions use "group" instead of "runnerGroup"
+      group: NRPD Auto Scale
       
       # Alternative: Repository-level runner (attached to a specific repository)
       # repository: DataKnifeAI/gitops-tools
