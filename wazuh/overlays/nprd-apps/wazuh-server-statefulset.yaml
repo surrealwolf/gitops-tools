@@ -36,9 +36,10 @@ spec:
     spec:
       containers:
       - name: wazuh-server
-        image: wazuh/wazuh-manager:4.13.1
-        # Using 4.13.1 instead of 4.14.0 due to x86-64-v2 CPU requirement in 4.14.0
+        image: wazuh/wazuh-manager:4.12.0
+        # Using 4.12.0 due to x86-64-v2 CPU requirement in newer versions
         # Cluster nodes don't support x86-64-v2, causing "Fatal glibc error"
+        # Note: May need to try even older versions (4.11.x, 4.10.x) if 4.12.0 still fails
         # Add configuration, volumes, resources, etc.
         # Refer to official Wazuh Kubernetes manifests
         # Must connect to wazuh-indexer service
