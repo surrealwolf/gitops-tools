@@ -3,6 +3,11 @@ kind: AutoscalingRunnerSet
 metadata:
   name: github-runner-scale-set
   namespace: managed-cicd
+  annotations:
+    # Controller version (REQUIRED)
+    # Must match the controller version to prevent deletion
+    # Controller version: 0.13.1
+    actions.github.com/runner-scale-set-controller-version: "0.13.1"
 spec:
   # Organization-level runner scale set
   # Available to all repositories in the organization
@@ -10,11 +15,8 @@ spec:
   githubConfigUrl: https://github.com/DataKnifeAI
   
   # Authentication secret (REQUIRED)
-  # NOTE: This secret should be created by Terraform when deploying the controller
-  # The secret must contain GitHub App or PAT credentials
-  # Common secret names created by Terraform: github-app-secret, github-token-secret, etc.
-  # Update this name to match what your Terraform project creates
-  githubConfigSecret: github-app-secret  # TODO: Verify secret name matches Terraform
+  # Secret created by Terraform with GitHub App credentials
+  githubConfigSecret: github-app-secret
   
   # Runner group name (must exist in GitHub org settings)
   # Create this group in: https://github.com/organizations/DataKnifeAI/settings/actions/runners
