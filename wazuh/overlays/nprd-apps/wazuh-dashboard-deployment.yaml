@@ -40,7 +40,18 @@ spec:
         ports:
         - containerPort: 5601
           name: http
+        env:
+        - name: OPENSEARCH_HOSTS
+          value: "https://wazuh-indexer:9200"
+        - name: SERVER_PORT
+          value: "5601"
+        - name: SERVER_SSL_ENABLED
+          value: "false"
         volumeMounts:
+        - name: config
+          mountPath: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
+          subPath: opensearch_dashboards.yml
+          readOnly: true
         - name: certs
           mountPath: /etc/wazuh-dashboard/certs/dashboard.pem
           subPath: wazuh-dashboard.pem
@@ -54,6 +65,9 @@ spec:
           subPath: root-ca.pem
           readOnly: true
       volumes:
+      - name: config
+        configMap:
+          name: wazuh-dashboard-config
       - name: certs
         secret:
           secretName: wazuh-certs

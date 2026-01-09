@@ -7,6 +7,7 @@ resources:
   # Wazuh Indexer components
   - wazuh-indexer-configmap.yaml
   - wazuh-indexer-secret.yaml
+  - wazuh-indexer-security-policy.yaml
   - wazuh-indexer-statefulset.yaml
   - wazuh-indexer-service.yaml
   

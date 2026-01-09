@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wazuh-indexer-security-policy
+  namespace: managed-tools
+  labels:
+    app: wazuh
+    component: indexer
+    managed-by: gitops
+data:
+  opensearch_security.policy: |
+    // Custom security policy for Wazuh Indexer
+    // Grants FilePermission for certificate directory
+    grant {
+        permission java.lang.management.ManagementPermission "control";
+        permission java.net.SocketPermission "localhost:9600","connect,resolve";
+        permission java.lang.RuntimePermission "getClassLoader";
+        // Grant permission to read certificate files
+        permission java.io.FilePermission "/etc/wazuh-indexer/certs/-", "read";
+        permission java.io.FilePermission "/etc/wazuh-indexer/certs", "read";
+    };
+
+    grant codebase "file:${java.home}/../lib/tools.jar" {
+      permission java.security.AllPermission;
+    };
+
+    grant codeBase "jrt:/jdk.attach" {
+        permission java.security.AllPermission;
+    };
+
+    grant codeBase "jrt:/jdk.internal.jvmstat" {
+        permission java.security.AllPermission;
+    };
+    grant {
+      permission java.lang.RuntimePermission "accessUserInformation";
+    };

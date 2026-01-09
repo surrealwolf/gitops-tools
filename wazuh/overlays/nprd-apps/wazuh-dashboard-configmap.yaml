@@ -1,12 +1,6 @@
 # Wazuh Dashboard ConfigMap
 #
-# This is a placeholder. Replace with actual Wazuh Dashboard configuration
-# from the official wazuh-kubernetes repository.
-#
-# Key configuration:
-# - Connection to Wazuh Indexer (service: wazuh-indexer:9200)
-# - Authentication settings
-# - TLS/SSL configuration
+# Configuration for Wazuh Dashboard to connect to Wazuh Indexer
 #
 apiVersion: v1
 kind: ConfigMap
@@ -19,6 +13,20 @@ metadata:
     managed-by: gitops
 data:
   opensearch_dashboards.yml: |
-    # Wazuh Dashboard configuration
-    # This should be populated from official Wazuh Kubernetes manifests
-    # Must include connection to wazuh-indexer service
+    # Server configuration
+    server.host: 0.0.0.0
+    server.port: 5601
+    server.ssl.enabled: false
+    
+    # OpenSearch/Wazuh Indexer configuration
+    opensearch.hosts: https://wazuh-indexer:9200
+    opensearch.ssl.verificationMode: certificate
+    opensearch.ssl.certificateAuthorities: ["/etc/wazuh-dashboard/certs/root-ca.pem"]
+    opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
+    
+    # Security settings
+    opensearch_security.multitenancy.enabled: false
+    opensearch_security.readonly_mode.roles: ["kibana_read_only"]
+    
+    # UI settings
+    uiSettings.overrides.defaultRoute: /app/wz-home

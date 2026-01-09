@@ -53,7 +53,13 @@ spec:
           cp /certs-source/wazuh-indexer.pem /certs-target/indexer.pem
           cp /certs-source/wazuh-indexer-key.pem /certs-target/indexer-key.pem
           chmod 644 /certs-target/indexer.pem
-          chmod 600 /certs-target/indexer-key.pem
+          chmod 644 /certs-target/indexer-key.pem
+          # Ensure directory is world-readable/executable for Java SecurityManager
+          chmod 755 /certs-target
+          chmod 644 /certs-target/*.pem
+          ls -la /certs-target/
+        securityContext:
+          runAsUser: 0
         volumeMounts:
         - name: certs-source
           mountPath: /certs-source
@@ -66,15 +72,25 @@ spec:
         # Using 4.10.3 due to x86-64-v2 CPU requirement in versions 4.11.0+
         # Cluster nodes don't support x86-64-v2, causing "Fatal glibc error"
         # 4.10.3 is the last 4.10.x release and may work on older CPUs
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
         volumeMounts:
         - name: certs-target
           mountPath: /etc/wazuh-indexer/certs
-          readOnly: true
+        - name: policy-target
+          mountPath: /usr/share/wazuh-indexer/opensearch-performance-analyzer
+          readOnly: false
       volumes:
       - name: certs-source
         secret:
           secretName: wazuh-certs
       - name: certs-target
+        emptyDir: {}
+      - name: security-policy
+        configMap:
+          name: wazuh-indexer-security-policy
+      - name: policy-target
         emptyDir: {}
   volumeClaimTemplates:
   - metadata:
