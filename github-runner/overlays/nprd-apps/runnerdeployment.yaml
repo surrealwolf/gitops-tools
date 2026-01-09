@@ -46,3 +46,12 @@ spec:
       env:
         - name: RUNNER_NAME
           value: "kubernetes-runner"
+      
+      # Ephemeral runners - clean up after job completion
+      # This ensures runners don't accumulate
+      ephemeral: true
+      
+      # Registration timeout - increase from default 10m to 20m
+      # GitHub API can be slow to reflect registration status
+      # This prevents false timeout warnings and runner recreation
+      registrationTimeout: 20m
