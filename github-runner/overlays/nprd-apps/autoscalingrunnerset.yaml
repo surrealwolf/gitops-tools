@@ -33,13 +33,10 @@ spec:
   # Official ARC creates ephemeral runners, so this is the minimum idle runners
   minRunners: 2
   
-  # Runner labels (optional)
-  # IMPORTANT: Official ARC supports multiple labels!
-  # This is different from community version which only supports one label
-  labels:
-    - self-hosted
-    - kubernetes
-    - linux
+  # NOTE: Labels are configured when the runner scale set is created in GitHub
+  # They are NOT set in the Kubernetes resource
+  # After the runner scale set is created, you can add labels via GitHub UI:
+  # https://github.com/organizations/DataKnifeAI/settings/actions/runner-groups/NRPD Auto Scale
   
   # Container spec for the runner pods
   template:
