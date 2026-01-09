@@ -20,8 +20,9 @@ data:
     
     # OpenSearch/Wazuh Indexer configuration
     opensearch.hosts: https://wazuh-indexer:9200
-    opensearch.ssl.verificationMode: certificate
-    opensearch.ssl.certificateAuthorities: ["/etc/wazuh-dashboard/certs/root-ca.pem"]
+    opensearch.ssl.verificationMode: none
+    # Note: Using 'none' verification mode temporarily until proper CA certificate is configured
+    # For production, use 'certificate' mode with proper root-ca.pem
     opensearch.requestHeadersAllowlist: ["securitytenant","Authorization"]
     
     # Security settings

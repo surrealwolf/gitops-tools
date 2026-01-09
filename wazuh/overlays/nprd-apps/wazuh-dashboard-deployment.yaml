@@ -31,11 +31,31 @@ spec:
         component: dashboard
         managed-by: gitops
     spec:
+      initContainers:
+      - name: keystore-setup
+        image: busybox:latest
+        command: ['sh', '-c']
+        args:
+        - |
+          mkdir -p /keystore-target
+          touch /keystore-target/opensearch_dashboards.keystore
+          chmod 644 /keystore-target/opensearch_dashboards.keystore
+          chown 1000:1000 /keystore-target/opensearch_dashboards.keystore
+          ls -la /keystore-target/
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: keystore
+          mountPath: /keystore-target
       containers:
       - name: wazuh-dashboard
         image: wazuh/wazuh-dashboard:4.14.1
         # Using 4.14.1 (latest) - SecurityManager disabled by default since 4.12.0+
         # CPU compatibility: Works with 'host' CPU type (Proxmox VMs configured)
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
         ports:
         - containerPort: 5601
           name: http
@@ -63,6 +83,9 @@ spec:
           mountPath: /etc/wazuh-dashboard/certs/root-ca.pem
           subPath: root-ca.pem
           readOnly: true
+        - name: keystore
+          mountPath: /etc/wazuh-dashboard/opensearch_dashboards.keystore
+          subPath: opensearch_dashboards.keystore
       volumes:
       - name: config
         configMap:
@@ -70,3 +93,5 @@ spec:
       - name: certs
         secret:
           secretName: wazuh-certs
+      - name: keystore
+        emptyDir: {}
