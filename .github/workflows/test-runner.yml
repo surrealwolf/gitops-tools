@@ -10,7 +10,7 @@ on:
 
 jobs:
   test-runner:
-    runs-on: [self-hosted, kubernetes, linux]  # Use self-hosted runners with specific labels
+    runs-on: self-hosted  # Use self-hosted runners (matches any runner with 'self-hosted' label)
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
