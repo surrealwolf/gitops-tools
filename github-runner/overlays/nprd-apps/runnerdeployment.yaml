@@ -8,18 +8,17 @@ spec:
   replicas: 1
   template:
     spec:
-      # Organization-level runner (available to all repos in org)
-      # This runner will be available to all projects in the organization
-      # NOTE: Runner groups are optional - organization-level runners work without them
-      # If you want to use runner groups, create one in GitHub org settings first,
-      # then add: runnerGroup: <group-name>
-      organization: DataKnifeAI
+      # Repository-level runner (attached to a specific repository)
+      # Repository-level runners always have access to the repository
+      # This avoids runner group access issues with organization-level runners
+      repository: DataKnifeAI/gitops-tools
       
-      # Optional: Assign to a runner group for better access control
-      # runnerGroup: default
-      
-      # Alternative: Repository-level runner (attached to a specific repository)
-      # repository: <YOUR_GITHUB_ORG>/<YOUR_REPO>
+      # Alternative: Organization-level runner (available to all repos in org)
+      # NOTE: Organization runners require runner group access configuration
+      # If using org-level, ensure the repository has access to the runner group:
+      # Settings > Actions > Runner groups > [Group Name] > Repository access
+      # organization: DataKnifeAI
+      # runnerGroup: default  # Optional: assign to a specific group
       
       # Alternative: Enterprise-level runner (available across enterprise)
       # enterprise: <YOUR_ENTERPRISE_NAME>
