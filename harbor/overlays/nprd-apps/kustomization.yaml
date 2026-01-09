@@ -4,13 +4,12 @@ kind: Kustomization
 namespace: managed-tools
 
 resources:
-  # Reference base resources using path relative to overlay directory
-  # When Fleet monitors harbor/ and processes harbor/overlays/nprd-apps/ as a bundle,
-  # the working directory is harbor/overlays/nprd-apps/, so ../base/ resolves to harbor/base/
-  - ../base/postgresql-cluster.yaml
-  - ../base/postgresql-database.yaml
-  - ../base/harbor-helmchart.yaml
-  - ../base/harbor-helmchartconfig.yaml
+  # Reference base kustomization directory
+  # When Fleet monitors harbor/ and creates separate bundles, each bundle may only
+  # have access to its own directory. However, Kustomize should resolve ../base/
+  # relative to the kustomization.yaml file location within the git checkout.
+  # If this doesn't work, the base and overlay may need to be in the same bundle.
+  - ../base
 
 # Cluster-specific overrides for nprd-apps
 # Add any nprd-apps specific configurations here
