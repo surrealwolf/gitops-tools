@@ -6,6 +6,11 @@ on:
     branches:
       - main
 
+# Explicit permissions to ensure workflow can run
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   test-runner:
     runs-on: self-hosted  # Use self-hosted runners (matches any runner with 'self-hosted' label)
