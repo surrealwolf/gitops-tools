@@ -1,0 +1,42 @@
+name: Test Self-Hosted Runner
+
+on:
+  workflow_dispatch:  # Allows manual triggering
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/test-runner.yml'
+
+jobs:
+  test-runner:
+    runs-on: self-hosted  # Use self-hosted runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Display runner info
+        run: |
+          echo "Runner OS: $(uname -a)"
+          echo "Runner hostname: $(hostname)"
+          echo "Working directory: $(pwd)"
+          echo "Runner labels: ${{ runner.labels }}"
+          echo "Runner name: ${{ runner.name }}"
+      
+      - name: Test basic commands
+        run: |
+          echo "Testing basic commands..."
+          echo "Date: $(date)"
+          echo "Uptime: $(uptime)"
+          echo "Kubernetes context:"
+          kubectl config current-context || echo "kubectl not available"
+      
+      - name: Test environment
+        run: |
+          echo "Environment variables:"
+          env | grep -E "RUNNER|GITHUB|CI" | sort
+      
+      - name: Success message
+        run: |
+          echo "✅ Self-hosted runner is working correctly!"
+          echo "Runner successfully executed all test steps."
