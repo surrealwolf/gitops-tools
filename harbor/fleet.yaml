@@ -17,17 +17,5 @@ targetCustomizations:
   - name: nprd-apps
     clusterSelector:
       matchLabels:
-        # Update these labels to match your nprd-apps cluster labels in Rancher
-        # Common label patterns:
-        #   cluster-name: nprd-apps
-        #   environment: nprd
-        #   managed.cattle.io/cluster-name: nprd-apps
-        #
-        # To find your cluster labels:
-        #   kubectl get clusters.management.cattle.io -o yaml | grep -A 10 labels
-        #
-        # Example (uncomment and adjust):
-        # managed.cattle.io/cluster-name: nprd-apps
-        #
-        # Alternative: Use clusterName (if Fleet supports it in your version)
-        # clusterName: nprd-apps
+        # Cluster label that Fleet uses for matching
+        management.cattle.io/cluster-display-name: nprd-apps
