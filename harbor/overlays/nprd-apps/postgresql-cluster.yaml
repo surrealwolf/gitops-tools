@@ -52,7 +52,7 @@ spec:
       cpu: "250m"
     limits:
       memory: "1Gi"
-      cpu: "1000m"
+      cpu: "1"  # Use "1" to match deployed format (equivalent to "1000m")
   
   # High Availability settings
   maxSyncReplicas: 1
