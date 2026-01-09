@@ -1,10 +1,9 @@
 #!/bin/bash
-# Install Harbor wildcard certificate from Kubernetes to Docker
-# This script extracts the certificate from the Kubernetes secret and installs it
-# so Docker can verify Harbor's TLS certificate
+# Certificate Setup Script
+# This script installs Harbor wildcard certificate from Kubernetes to Docker
 #
 # Usage:
-#   ./scripts/install-harbor-cert.sh
+#   ./scripts/cert-setup.sh
 
 set -e
 
@@ -12,9 +11,15 @@ NAMESPACE="${HARBOR_NAMESPACE:-managed-tools}"
 SECRET_NAME="${HARBOR_TLS_SECRET:-wildcard-dataknife-net-tls}"
 HARBOR_URL="${HARBOR_REGISTRY_URL:-harbor.dataknife.net}"
 
-echo "=========================================="
-echo "Harbor Certificate Installation"
-echo "=========================================="
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}Harbor Certificate Installation${NC}"
+echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Configuration:"
 echo "  Namespace: ${NAMESPACE}"
@@ -24,17 +29,17 @@ echo ""
 
 # Check if kubectl is available
 if ! command -v kubectl &> /dev/null; then
-    echo "Error: kubectl is not installed or not in PATH"
+    echo -e "${RED}Error: kubectl is not installed or not in PATH${NC}"
     exit 1
 fi
 
 # Check if secret exists
 if ! kubectl get secret "${SECRET_NAME}" -n "${NAMESPACE}" > /dev/null 2>&1; then
-    echo "Error: Secret '${SECRET_NAME}' not found in namespace '${NAMESPACE}'"
+    echo -e "${RED}Error: Secret '${SECRET_NAME}' not found in namespace '${NAMESPACE}'${NC}"
     exit 1
 fi
 
-echo "✓ Secret found in Kubernetes"
+echo -e "${GREEN}✓ Secret found in Kubernetes${NC}"
 echo ""
 
 # Extract certificate
@@ -43,12 +48,12 @@ TEMP_CERT=$(mktemp)
 kubectl get secret "${SECRET_NAME}" -n "${NAMESPACE}" -o jsonpath='{.data.tls\.crt}' | base64 -d > "${TEMP_CERT}"
 
 if [ ! -s "${TEMP_CERT}" ]; then
-    echo "Error: Failed to extract certificate"
+    echo -e "${RED}Error: Failed to extract certificate${NC}"
     rm -f "${TEMP_CERT}"
     exit 1
 fi
 
-echo "✓ Certificate extracted"
+echo -e "${GREEN}✓ Certificate extracted${NC}"
 echo ""
 
 # Install certificate to Docker
@@ -67,7 +72,7 @@ sudo chmod 644 "${CERT_FILE}"
 
 rm -f "${TEMP_CERT}"
 
-echo "✓ Certificate installed to ${CERT_FILE}"
+echo -e "${GREEN}✓ Certificate installed to ${CERT_FILE}${NC}"
 echo ""
 
 # Restart Docker
@@ -76,9 +81,9 @@ sudo systemctl restart docker
 sleep 3
 
 if docker info > /dev/null 2>&1; then
-    echo "✓ Docker restarted successfully"
+    echo -e "${GREEN}✓ Docker restarted successfully${NC}"
 else
-    echo "⚠️  Docker may need a moment to start"
+    echo -e "${YELLOW}⚠️  Docker may need a moment to start${NC}"
 fi
 echo ""
 
@@ -86,21 +91,21 @@ echo ""
 echo "Verifying certificate installation..."
 if [ -f "${CERT_FILE}" ]; then
     CERT_SUBJECT=$(openssl x509 -in "${CERT_FILE}" -noout -subject 2>/dev/null | sed 's/subject=//' || echo "unknown")
-    echo "✓ Certificate file exists"
+    echo -e "${GREEN}✓ Certificate file exists${NC}"
     echo "  Subject: ${CERT_SUBJECT}"
 else
-    echo "✗ Certificate file not found"
+    echo -e "${RED}✗ Certificate file not found${NC}"
     exit 1
 fi
 echo ""
 
-echo "=========================================="
-echo "Certificate Installation Complete"
-echo "=========================================="
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}Certificate Installation Complete${NC}"
+echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "You can now use Docker with Harbor:"
 echo "  docker login ${HARBOR_URL} -u <username> -p <password>"
 echo ""
 echo "To test, run:"
-echo "  ./scripts/test-harbor-push-pull.sh"
+echo "  ./scripts/harbor-test.sh"
 echo ""

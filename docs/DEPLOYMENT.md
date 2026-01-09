@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide walks you through deploying GitHub and GitLab runners to your cluster.
+This guide walks you through deploying Harbor, GitHub, and GitLab runners to your cluster.
 
 ## Prerequisites
 
@@ -18,7 +18,52 @@ This guide walks you through deploying GitHub and GitLab runners to your cluster
    - GitLab instance URL
    - Runner registration token
 
-## Deployment Steps
+## Quick Start
+
+### Step 1: Get Tokens
+
+**GitHub Token:**
+1. Go to: https://github.com/settings/tokens
+2. Create token with `repo` and `admin:org` scopes
+3. Copy the token
+
+**GitLab Token:**
+1. Go to your GitLab RaaS group
+2. Settings → CI/CD → Runners
+3. Copy the group runner registration token
+
+### Step 2: Create Secrets
+
+Run the setup script:
+
+```bash
+# Interactive mode
+./scripts/runner-setup.sh
+
+# OR non-interactive mode
+GITHUB_TOKEN=<token> GITLAB_TOKEN=<token> GITLAB_URL=<url> ./scripts/runner-setup.sh all
+```
+
+### Step 3: Update Configuration
+
+1. **GitHub Runner**: Edit `github-runner/base/runnerdeployment.yaml`
+   - Replace `<YOUR_GITHUB_ORG>` with your organization name
+
+2. **GitLab Runner**: Edit `gitlab-runner/base/gitlab-runner-helmchart.yaml`
+   - Set `gitlabUrl` to your GitLab instance URL
+   - Use `./scripts/runner-config.sh` to update token via HelmChartConfig
+
+### Step 4: Commit and Push
+
+```bash
+git add .
+git commit -m "feat: configure runners"
+git push
+```
+
+Fleet will automatically deploy!
+
+## Detailed Deployment Steps
 
 ### Step 1: Create Required Namespaces
 
@@ -34,7 +79,7 @@ kubectl create namespace managed-cicd --dry-run=client -o yaml | kubectl apply -
 **Option A: Using the script (Recommended)**
 
 ```bash
-./scripts/create-github-runner-secret.sh
+./scripts/runner-setup.sh github
 ```
 
 **Option B: Manual creation**
@@ -54,7 +99,7 @@ kubectl create secret generic actions-runner-controller \
 **Option A: Using the script (Recommended)**
 
 ```bash
-./scripts/create-gitlab-runner-secret.sh
+./scripts/runner-setup.sh gitlab
 ```
 
 **Option B: Manual creation**
@@ -83,22 +128,19 @@ kubectl create secret generic gitlab-runner-secret \
 
 1. Edit `gitlab-runner/base/gitlab-runner-helmchart.yaml`:
    - Update `gitlabUrl: https://gitlab.com` (or your GitLab instance URL)
-   - Extract and set `runnerRegistrationToken` from secret:
-     ```bash
-     kubectl get secret gitlab-runner-secret -n managed-cicd \
-       -o jsonpath='{.data.runner-registration-token}' | base64 -d
-     ```
-   - Or use Fleet HelmChartConfig to inject from secret (recommended)
 
-2. (Optional) Adjust `concurrent` setting for more parallel jobs:
+2. Update token via HelmChartConfig (recommended - token never goes to git):
+   ```bash
+   ./scripts/runner-config.sh
+   ```
+
+3. (Optional) Adjust `concurrent` setting for more parallel jobs:
    - Current: `concurrent: 4` (4 parallel jobs)
    - Increase for more capacity (e.g., `concurrent: 10`)
 
 ### Step 5: Configure Fleet GitRepo
 
 Ensure your Fleet GitRepo is monitoring the appropriate paths:
-
-**Option 1: Monitor overlay directories (Recommended)**
 
 ```yaml
 apiVersion: fleet.cattle.io/v1alpha1
@@ -112,20 +154,7 @@ spec:
   paths:
     - github-runner/overlays/nprd-apps
     - gitlab-runner/overlays/nprd-apps
-```
-
-**Option 2: Monitor root directory**
-
-```yaml
-apiVersion: fleet.cattle.io/v1alpha1
-kind: GitRepo
-metadata:
-  name: gitops-tools
-  namespace: fleet-default
-spec:
-  repo: <YOUR_REPO_URL>
-  branch: main
-  # No paths specified - Fleet will create bundles for each directory
+    - harbor/overlays/nprd-apps
 ```
 
 ### Step 6: Update Fleet Cluster Targeting
@@ -139,6 +168,7 @@ kubectl get clusters.management.cattle.io -o yaml | grep -A 10 labels
 # Update fleet.yaml files:
 # - github-runner/overlays/nprd-apps/fleet.yaml
 # - gitlab-runner/overlays/nprd-apps/fleet.yaml
+# - harbor/overlays/nprd-apps/fleet.yaml
 ```
 
 Uncomment and set the appropriate label, for example:
@@ -155,7 +185,7 @@ targetCustomizations:
 ```bash
 # Commit your configuration changes
 git add .
-git commit -m "feat: configure GitHub and GitLab runners for deployment"
+git commit -m "feat: configure runners and Harbor for deployment"
 git push
 ```
 
@@ -180,17 +210,9 @@ kubectl describe bundle <bundle-name> -n fleet-default
 kubectl get pods -n actions-runner-system
 kubectl logs -n actions-runner-system -l app=actions-runner-controller
 
-# Check HelmChart
-kubectl get helmchart -n managed-cicd
-kubectl describe helmchart actions-runner-controller -n managed-cicd
-
 # Check RunnerDeployment
 kubectl get runnerdeployment -n managed-cicd
 kubectl describe runnerdeployment github-runner-deployment -n managed-cicd
-
-# Check HorizontalRunnerAutoscaler
-kubectl get horizontalrunnerautoscaler -n managed-cicd
-kubectl describe horizontalrunnerautoscaler github-runner-autoscaler -n managed-cicd
 
 # Check runner pods
 kubectl get pods -n managed-cicd -l runner-deployment-name=github-runner-deployment
@@ -223,6 +245,79 @@ kubectl describe helmchart gitlab-runner -n managed-cicd
 2. Navigate to **Settings** → **CI/CD** → **Runners**
 3. Verify runner appears with green circle (active)
 4. Test by running a CI/CD pipeline
+
+## Token Setup Details
+
+### GitHub Organization Runner Token
+
+For organization-level runners, you need a GitHub Personal Access Token (PAT) or GitHub App.
+
+**Option 1: Personal Access Token (Recommended for quick setup)**
+
+1. Go to GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Click "Generate new token (classic)"
+3. Give it a name (e.g., "Kubernetes Runner Controller")
+4. Select scopes:
+   - ✅ `repo` (Full control of private repositories)
+   - ✅ `admin:org` (if managing organization runners)
+5. Click "Generate token"
+6. **Copy the token immediately** (you won't see it again)
+
+**Option 2: GitHub App (Recommended for organizations)**
+
+1. Go to your organization → Settings → Developer settings → GitHub Apps
+2. Click "New GitHub App"
+3. Configure:
+   - Name: "Kubernetes Runner Controller"
+   - Homepage URL: Your organization URL
+   - Permissions:
+     - Actions: Read and write
+     - Metadata: Read-only
+4. Generate a private key
+5. Install the app on your organization
+6. Note the App ID, Installation ID, and save the private key
+
+### GitLab Group Runner Token (RaaS Group)
+
+1. Go to your GitLab instance
+2. Navigate to the **RaaS** group
+3. Go to **Settings** → **CI/CD**
+4. Expand **Runners** section
+5. Under **Group runners**, find the registration token
+6. Copy the token
+
+**Note:** If you don't see group runners, you may need to:
+- Ensure you have Maintainer/Owner permissions on the group
+- Or use an instance-level runner token from Admin Area
+
+## GitHub Organization Setup
+
+### Option 1: Create New DataKnife Organization (Recommended)
+
+**Pros:**
+- Keeps personal account separate
+- Better aligns with your domain (dataknife.net)
+- More professional setup
+- Can transfer repos as needed
+
+**Steps:**
+1. Go to https://github.com/organizations/new
+2. Choose organization name: `DataKnife` or `dataknife`
+3. Choose plan (Free tier works for most cases)
+4. Create organization
+5. Transfer repositories from personal account to `DataKnife` (optional)
+6. Update runner configuration to use `DataKnife` organization
+
+### Option 2: Convert Personal Account to Organization
+
+**Pros:**
+- Keeps existing repositories in place
+- No need to transfer repos
+
+**Cons:**
+- **Irreversible** - cannot convert back to personal account
+- Requires creating a new personal account first
+- Some personal data won't transfer (SSH keys, OAuth tokens, etc.)
 
 ## Troubleshooting
 

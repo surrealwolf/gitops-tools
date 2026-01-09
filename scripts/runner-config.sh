@@ -1,15 +1,9 @@
 #!/bin/bash
-# Update GitLab Runner registration token in HelmChartConfig from Kubernetes secret
-# This script updates the HelmChartConfig directly in the cluster - token never goes to git
+# Runner Configuration Script
+# This script updates GitLab Runner registration token in HelmChartConfig
 #
 # Usage:
-#   ./scripts/update-gitlab-runner-helmchartconfig.sh
-#
-# This ensures the token is only stored in:
-#   1. Kubernetes secret (gitlab-runner-secret)
-#   2. HelmChartConfig in cluster (not in git)
-#
-# The token is NEVER committed to git repository
+#   ./scripts/runner-config.sh
 
 set -e
 
@@ -17,18 +11,22 @@ NAMESPACE="${NAMESPACE:-managed-cicd}"
 SECRET_NAME="${SECRET_NAME:-gitlab-runner-secret}"
 HELMCHARTCONFIG_NAME="gitlab-runner"
 
-echo "Updating GitLab Runner registration token in HelmChartConfig..."
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+echo -e "${GREEN}Updating GitLab Runner registration token in HelmChartConfig${NC}"
 echo "Token will be extracted from Kubernetes secret and applied to cluster only."
 echo ""
 
 # Check if secret exists
 if ! kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" &>/dev/null; then
-    echo "Error: Secret '$SECRET_NAME' not found in namespace '$NAMESPACE'"
+    echo -e "${RED}Error: Secret '$SECRET_NAME' not found in namespace '$NAMESPACE'${NC}"
     echo ""
     echo "Create the secret first:"
-    echo "  kubectl create secret generic $SECRET_NAME \\"
-    echo "    --from-literal=runner-registration-token='<YOUR_TOKEN>' \\"
-    echo "    -n $NAMESPACE"
+    echo "  ./scripts/runner-setup.sh gitlab"
     exit 1
 fi
 
@@ -38,20 +36,19 @@ TOKEN=$(kubectl get secret "$SECRET_NAME" -n "$NAMESPACE" \
   -o jsonpath='{.data.runner-registration-token}' | base64 -d)
 
 if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
-    echo "Error: Failed to extract token from secret"
+    echo -e "${RED}Error: Failed to extract token from secret${NC}"
     exit 1
 fi
 
-echo "✓ Token extracted successfully"
+echo -e "${GREEN}✓ Token extracted successfully${NC}"
 echo ""
 
-# Escape the token for YAML (escape quotes, backslashes, and newlines)
+# Escape the token for YAML
 ESCAPED_TOKEN=$(echo "$TOKEN" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed ':a;N;$!ba;s/\n/\\n/g')
 
 # Check if HelmChartConfig exists
 if kubectl get helmchartconfig "$HELMCHARTCONFIG_NAME" -n "$NAMESPACE" &>/dev/null; then
     echo "Updating existing HelmChartConfig..."
-    # Update existing HelmChartConfig using a temporary file to avoid JSON escaping issues
     TMP_FILE=$(mktemp)
     cat > "$TMP_FILE" <<EOF
 apiVersion: helm.cattle.io/v1
@@ -67,7 +64,6 @@ EOF
     rm -f "$TMP_FILE"
 else
     echo "Creating new HelmChartConfig..."
-    # Create new HelmChartConfig
     cat <<EOF | kubectl apply -f -
 apiVersion: helm.cattle.io/v1
 kind: HelmChartConfig
@@ -81,7 +77,7 @@ EOF
 fi
 
 echo ""
-echo "✓ HelmChartConfig updated successfully"
+echo -e "${GREEN}✓ HelmChartConfig updated successfully${NC}"
 echo ""
 echo "✅ Token is now in:"
 echo "   - Kubernetes secret: $SECRET_NAME"

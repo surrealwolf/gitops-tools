@@ -5,10 +5,11 @@ GitOps repository for deploying managed Kubernetes tools to the `nprd-apps` clus
 ## Quick Start
 
 1. **Generate TLS certificate**: `./scripts/generate-wildcard-cert.sh`
-2. **Create secrets**: `./scripts/create-harbor-secrets.sh`
-3. **Deploy via Fleet**: Configure GitRepo to monitor `harbor/`
+2. **Setup Harbor**: `./scripts/harbor-setup.sh all`
+3. **Setup Runners**: `./scripts/runner-setup.sh all`
+4. **Deploy via Fleet**: Configure GitRepo to monitor the tool directories
 
-See [docs/QUICK_START.md](docs/QUICK_START.md) for detailed setup instructions.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed setup instructions.
 
 ## Tools
 
@@ -30,11 +31,8 @@ See [docs/QUICK_START.md](docs/QUICK_START.md) for detailed setup instructions.
 
 ## Documentation
 
-- [Quick Start Guide](docs/QUICK_START.md) - Initial setup and deployment
-- [Deployment Guide](docs/DEPLOYMENT.md) - Detailed deployment instructions
-- [Harbor Setup](docs/HARBOR_SETUP.md) - Harbor registry and proxy cache configuration
-- [Setup Tokens](docs/SETUP_TOKENS.md) - Token management for runners
-- [GitHub Organization Setup](docs/GITHUB_ORG_SETUP.md) - GitHub organization configuration
+- [Deployment Guide](docs/DEPLOYMENT.md) - Complete setup and deployment instructions for all tools
+- [Harbor Guide](docs/HARBOR.md) - Harbor registry setup, storage, and usage
 - [Changelog](docs/CHANGELOG.md) - Version history
 
 ## Cluster Information
