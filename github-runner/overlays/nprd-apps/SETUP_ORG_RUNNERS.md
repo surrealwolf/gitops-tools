@@ -14,7 +14,7 @@ This guide walks you through setting up organization-level runners with a runner
 2. Click **"New runner group"** button
 
 3. Configure the group:
-   - **Name**: `kubernetes-runners` (must match `runnerGroup` in `runnerdeployment.yaml`)
+   - **Name**: `NRPD Auto Scale` (must match `runnerGroup` in `runnerdeployment.yaml`)
    - **Repository access**: Select **"All repositories"**
    - Click **"Create group"**
 
@@ -27,7 +27,7 @@ This guide walks you through setting up organization-level runners with a runner
 ## Step 2: Verify Configuration
 
 The runner group should:
-- ✅ Be named `kubernetes-runners`
+- ✅ Be named `NRPD Auto Scale`
 - ✅ Have access to "All repositories"
 - ✅ Be visible in the runner groups list
 
@@ -60,7 +60,7 @@ After Fleet updates (1-2 minutes):
 
 2. Check runners in GitHub:
    - Go to: https://github.com/organizations/DataKnifeAI/settings/actions/runners
-   - Click on the `kubernetes-runners` group
+   - Click on the `NRPD Auto Scale` group
    - Verify runners appear and are "Online"
 
 3. Test with a workflow:
@@ -71,7 +71,7 @@ After Fleet updates (1-2 minutes):
 
 ### Runners Not Appearing
 
-- **Check runner group exists**: Verify `kubernetes-runners` group exists in GitHub
+- **Check runner group exists**: Verify `NRPD Auto Scale` group exists in GitHub
 - **Check group name matches**: Must exactly match `runnerGroup` in YAML
 - **Check Fleet status**: `kubectl --context=nprd-apps get gitrepo -A`
 
