@@ -1,0 +1,53 @@
+apiVersion: actions.github.com/v1beta1
+kind: AutoscalingRunnerSet
+metadata:
+  name: github-runner-scale-set
+  namespace: managed-cicd
+spec:
+  # Organization-level runner scale set
+  # Available to all repositories in the organization
+  # Runners are assigned to a runner group for access control
+  githubConfigUrl: https://github.com/DataKnifeAI
+  
+  # Runner group name (must exist in GitHub org settings)
+  # Create this group in: https://github.com/organizations/DataKnifeAI/settings/actions/runners
+  # Configure it to allow "All repositories" or select specific repos
+  # NOTE: Runner group must exist BEFORE creating this resource
+  runnerGroup: NRPD Auto Scale
+  
+  # Runner scale set name (used in GitHub)
+  # This appears as the runner name prefix in GitHub Actions
+  runnerScaleSetName: nprd-autoscale-runners
+  
+  # Maximum number of runners that can be created
+  maxRunners: 10
+  
+  # Minimum number of runners to maintain
+  # Official ARC creates ephemeral runners, so this is the minimum idle runners
+  minRunners: 2
+  
+  # Runner labels (optional)
+  # IMPORTANT: Official ARC supports multiple labels!
+  # This is different from community version which only supports one label
+  labels:
+    - self-hosted
+    - kubernetes
+    - linux
+  
+  # Container spec for the runner pods
+  template:
+    spec:
+      containers:
+      - name: runner
+        image: ghcr.io/actions/actions-runner:latest
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: "2"  # Use normalized format to match Kubernetes (2000m = 2)
+            memory: 4Gi
+  
+  # Ephemeral runners are default in official ARC
+  # They automatically clean up after job completion
+  # This is built-in and doesn't need explicit configuration

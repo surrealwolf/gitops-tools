@@ -43,14 +43,39 @@ spec:
         component: indexer
         managed-by: gitops
     spec:
+      initContainers:
+      - name: cert-setup
+        image: busybox:latest
+        command: ['sh', '-c']
+        args:
+        - |
+          mkdir -p /certs-target
+          cp /certs-source/wazuh-indexer.pem /certs-target/indexer.pem
+          cp /certs-source/wazuh-indexer-key.pem /certs-target/indexer-key.pem
+          chmod 644 /certs-target/indexer.pem
+          chmod 600 /certs-target/indexer-key.pem
+        volumeMounts:
+        - name: certs-source
+          mountPath: /certs-source
+          readOnly: true
+        - name: certs-target
+          mountPath: /certs-target
       containers:
       - name: wazuh-indexer
         image: wazuh/wazuh-indexer:4.10.3
         # Using 4.10.3 due to x86-64-v2 CPU requirement in versions 4.11.0+
         # Cluster nodes don't support x86-64-v2, causing "Fatal glibc error"
         # 4.10.3 is the last 4.10.x release and may work on older CPUs
-        # Add configuration, volumes, resources, etc.
-        # Refer to official Wazuh Kubernetes manifests
+        volumeMounts:
+        - name: certs-target
+          mountPath: /etc/wazuh-indexer/certs
+          readOnly: true
+      volumes:
+      - name: certs-source
+        secret:
+          secretName: wazuh-certs
+      - name: certs-target
+        emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: data

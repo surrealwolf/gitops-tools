@@ -1,0 +1,80 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: gha-runner-scale-set
+  namespace: managed-cicd
+spec:
+  chart: gha-runner-scale-set
+  repo: https://actions-runner-controller.github.io/actions-runner-controller
+  targetNamespace: managed-cicd
+  valuesContent: |-
+    # Official GitHub Actions Runner Controller - Runner Scale Set
+    # See: https://docs.github.com/en/actions/tutorials/use-actions-runner-controller/deploy-runner-scale-sets
+    
+    # GitHub configuration
+    # Organization URL
+    githubConfigUrl: https://github.com/DataKnifeAI
+    
+    # Runner scale set name (appears in GitHub Actions)
+    runnerScaleSetName: nprd-autoscale-runners
+    
+    # Runner group name (must exist in GitHub org settings)
+    # Create this group in: https://github.com/organizations/DataKnifeAI/settings/actions/runners
+    # Configure it to allow "All repositories" or select specific repos
+    # NOTE: Runner group must exist BEFORE deploying
+    runnerGroup: NRPD Auto Scale
+    
+    # Scaling configuration
+    minRunners: 2
+    maxRunners: 10
+    
+    # Runner labels (official ARC supports multiple labels!)
+    # This is different from community version which only supports one label
+    labels:
+      - self-hosted
+      - kubernetes
+      - linux
+    
+    # Container template for runner pods
+    template:
+      spec:
+        containers:
+        - name: runner
+          image: ghcr.io/actions/actions-runner:latest
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+    
+    # Authentication
+    # NOTE: You must create a Kubernetes secret with GitHub App credentials
+    # The secret must exist in the target namespace with keys:
+    # - github_app_id
+    # - github_app_installation_id
+    # - github_app_private_key
+    # 
+    # To create the secret:
+    #   kubectl create secret generic github-app-secret \
+    #     --from-literal=github_app_id='<APP_ID>' \
+    #     --from-literal=github_app_installation_id='<INSTALLATION_ID>' \
+    #     --from-literal=github_app_private_key='<PRIVATE_KEY>' \
+    #     -n managed-cicd
+    #
+    # GitHub App is recommended for official ARC (more secure than PAT)
+    githubAppPrivateKeySecretRef: github-app-secret
+    githubAppId: ""  # Set via secret or override
+    githubAppInstallationId: ""  # Set via secret or override
+    
+    # Ephemeral runners are default in official ARC
+    # Runners automatically clean up after job completion
+    # No explicit configuration needed
+    
+    # Metrics (optional)
+    # metrics:
+    #   enabled: false
+    #   controllerManagerAddr: ":8080"
+    #   listenerAddr: ":8080"
+    #   listenerEndpoint: "/metrics"

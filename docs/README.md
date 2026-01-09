@@ -1,27 +1,44 @@
-# Documentation
+# GitOps Tools Documentation
 
-This directory contains detailed documentation for the GitOps Tools repository.
+This directory contains comprehensive documentation for all tools and services managed in this GitOps repository.
 
 ## Documentation Index
 
-- **[Quick Start Guide](QUICK_START.md)** - Get started quickly with setup and deployment
-- **[Deployment Guide](DEPLOYMENT.md)** - Comprehensive deployment instructions for all tools
-- **[Harbor Setup](HARBOR_SETUP.md)** - Harbor registry, robot accounts, and DockerHub proxy cache configuration
-- **[Setup Tokens](SETUP_TOKENS.md)** - Managing tokens for GitHub and GitLab runners
-- **[GitHub Organization Setup](GITHUB_ORG_SETUP.md)** - GitHub organization configuration and migration
-- **[Changelog](CHANGELOG.md)** - Version history and changes
-
-## Tool-Specific Documentation
+### GitHub Runner
+- **[GitHub Runner Overview](GITHUB_RUNNER.md)** - Complete guide for GitHub Actions Runner Controller
+  - [Official ARC Controller](github-runner/OFFICIAL_ARC.md) - Official vs Community ARC comparison
+  - [Migration Guide](github-runner/MIGRATION_TO_OFFICIAL_ARC.md) - Migrating to official ARC
+  - [Runner Groups](github-runner/RUNNER_GROUPS.md) - Runner groups configuration
+  - [Runner Group Troubleshooting](github-runner/RUNNER_GROUP_ISSUE.md) - Troubleshooting runner group issues
+  - [Setup Organization Runners](github-runner/SETUP_ORG_RUNNERS.md) - Setting up org-level runners
 
 ### Harbor
-- Main setup: [HARBOR_SETUP.md](HARBOR_SETUP.md)
-- Fleet configuration: `../harbor/FLEET.md`
-- PostgreSQL setup: `../harbor/base/POSTGRESQL.md`
-- Base README: `../harbor/base/README.md`
+- **[Harbor Documentation](HARBOR.md)** - Harbor container registry setup and configuration
 
-### GitHub Runner
-- Base README: `../github-runner/base/README.md`
+### Wazuh
+- **[Wazuh Deployment Review](wazuh-deployment-review.md)** - Comprehensive Wazuh deployment review
+- **[Wazuh CPU Compatibility](wazuh-cpu-compatibility.md)** - CPU compatibility considerations for Wazuh
 
-### GitLab Runner
-- Base README: `../gitlab-runner/base/README.md`
+### General
+- **[Deployment Guide](DEPLOYMENT.md)** - General deployment procedures
+- **[Fleet Structure](FLEET_STRUCTURE.md)** - Fleet GitOps structure and organization
+- **[Changelog](CHANGELOG.md)** - Project changelog
+
+## Quick Links
+
+- [Main Repository README](../README.md)
+- [Contributing Guide](../CONTRIBUTING.md)
+- [Code of Conduct](../CODE_OF_CONDUCT.md)
+
+## Repository Structure
+
+```
+.
+├── docs/                      # Documentation (this directory)
+├── github-runner/            # GitHub Actions Runner Controller
+├── gitlab-runner/            # GitLab Runner
+├── harbor/                   # Harbor container registry
+├── wazuh/                    # Wazuh security monitoring
+└── secrets/                  # Secret templates and examples
+```
 
