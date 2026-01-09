@@ -48,10 +48,9 @@ spec:
           value: "kubernetes-runner"
       
       # Ephemeral runners - clean up after job completion
-      # This ensures runners don't accumulate
+      # This ensures runners don't accumulate and prevents replica buildup
       ephemeral: true
       
-      # Registration timeout - increase from default 10m to 20m
-      # GitHub API can be slow to reflect registration status
-      # This prevents false timeout warnings and runner recreation
-      registrationTimeout: 20m
+      # Note: registrationTimeout is not a valid field on RunnerDeployment
+      # The timeout is managed by the controller (default 10m)
+      # Ephemeral runners will help prevent the buildup issue
