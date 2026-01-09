@@ -26,14 +26,15 @@ These features were introduced in Intel Core 2 and AMD K10 processors (circa 200
 
 ## Solutions
 
-### Option 1: Use Older Wazuh Version (Current Attempt)
+### Option 1: Use Older Wazuh Version (Attempted)
 
-Trying Wazuh 4.11.0 which may not require x86-64-v2:
-- `wazuh-indexer:4.11.0`
-- `wazuh-manager:4.11.0`
-- `wazuh-dashboard:4.11.0`
+Tried Wazuh versions:
+- ❌ 4.14.0 - Requires x86-64-v2
+- ❌ 4.13.1 - Requires x86-64-v2
+- ❌ 4.12.0 - Requires x86-64-v2
+- ❌ 4.11.0 - Requires x86-64-v2
 
-**Status**: Testing in progress
+**Status**: All tested versions (4.11.0+) require x86-64-v2. Need to try 4.10.x or earlier, or use alternative solutions.
 
 ### Option 2: Build Custom Images
 
