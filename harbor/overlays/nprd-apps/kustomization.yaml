@@ -4,14 +4,13 @@ kind: Kustomization
 namespace: managed-tools
 
 resources:
-  # Reference base resources using path relative to harbor/ root
-  # When Fleet monitors harbor/ and processes harbor/overlays/nprd-apps/,
-  # the working directory is harbor/, so base/ is accessible
-  # But if that doesn't work, try ../../base/ or include base resources directly
-  - ../../base/postgresql-cluster.yaml
-  - ../../base/postgresql-database.yaml
-  - ../../base/harbor-helmchart.yaml
-  - ../../base/harbor-helmchartconfig.yaml
+  # Reference base resources using path relative to overlay directory
+  # When Fleet monitors harbor/ and processes harbor/overlays/nprd-apps/ as a bundle,
+  # the working directory is harbor/overlays/nprd-apps/, so ../base/ resolves to harbor/base/
+  - ../base/postgresql-cluster.yaml
+  - ../base/postgresql-database.yaml
+  - ../base/harbor-helmchart.yaml
+  - ../base/harbor-helmchartconfig.yaml
 
 # Cluster-specific overrides for nprd-apps
 # Add any nprd-apps specific configurations here
