@@ -17,7 +17,9 @@ spec:
     
     # Runner registration token
     # Token extracted from secret: gitlab-runner-secret
-    runnerRegistrationToken: "REMOVED_SECRET_GITLAB_TOKEN"
+          # runnerRegistrationToken: "" # Set via Fleet HelmChartConfig or extract from secret
+          # To extract from secret:
+          # kubectl get secret gitlab-runner-secret -n managed-cicd -o jsonpath='{.data.runner-registration-token}' | base64 -d
     # To use a secret, you can also set it via Fleet HelmChartConfig or
     # update this value directly with the token from the secret
     

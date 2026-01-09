@@ -11,17 +11,19 @@ This document summarizes the Harbor registry, robot account, and DockerHub proxy
 
 ### 2. Robot Account
 - **Full Name**: `robot$library+ci-builder`
-- **Secret**: `REMOVED_SECRET_HARBOR_ROBOT`
+- **Secret**: `<stored in .env file - do not commit>`
 - **Project**: `library`
 - **Permissions**: Push, Pull, Create artifacts
 - **Purpose**: Automated CI/CD builds and image pushes
 
-**Credentials stored in `.env` file:**
+**Credentials stored in `.env` file (not committed to git):**
 ```bash
 HARBOR_ROBOT_ACCOUNT_NAME=ci-builder
-HARBOR_ROBOT_ACCOUNT_SECRET=REMOVED_SECRET_HARBOR_ROBOT
+HARBOR_ROBOT_ACCOUNT_SECRET=<your-secret-here>
 HARBOR_ROBOT_ACCOUNT_FULL_NAME=robot$library+ci-builder
 ```
+
+**⚠️ Important**: The robot account secret is stored in `.env` file which is gitignored. Never commit actual secrets to git.
 
 ### 3. DockerHub Registry Endpoint
 - **Name**: `DockerHub`
@@ -45,9 +47,10 @@ According to the [Harbor documentation](https://goharbor.io/docs/main/administra
 
 ```bash
 # Login with robot account
+# Get credentials from .env file or Harbor UI
 docker login harbor.dataknife.net \
   -u 'robot$library+ci-builder' \
-  -p 'REMOVED_SECRET_HARBOR_ROBOT'
+  -p '${HARBOR_ROBOT_ACCOUNT_SECRET}'
 
 # Tag and push an image
 docker tag my-image:latest harbor.dataknife.net/library/my-image:latest
@@ -85,28 +88,29 @@ docker pull harbor.dataknife.net/library/my-image:latest
 
 ### Check Projects
 ```bash
-curl -s -k -u "admin:REMOVED_SECRET_HARBOR_ADMIN" \
+# Use Harbor admin credentials from .env file or Harbor UI
+curl -s -k -u "admin:${HARBOR_ADMIN_PASSWORD}" \
   "https://harbor.dataknife.net/api/v2.0/projects" | \
   jq -r '.[] | "\(.name): public=\(.metadata.public), proxy_cache=\(.registry_id // "none")"'
 ```
 
 ### Check Robot Accounts
 ```bash
-curl -s -k -u "admin:REMOVED_SECRET_HARBOR_ADMIN" \
+curl -s -k -u "admin:${HARBOR_ADMIN_PASSWORD}" \
   "https://harbor.dataknife.net/api/v2.0/projects/library/robots" | \
   jq -r '.[] | "\(.name)"'
 ```
 
 ### Check Registry Endpoints
 ```bash
-curl -s -k -u "admin:REMOVED_SECRET_HARBOR_ADMIN" \
+curl -s -k -u "admin:${HARBOR_ADMIN_PASSWORD}" \
   "https://harbor.dataknife.net/api/v2.0/registries" | \
   jq -r '.[] | "\(.name): \(.type), URL=\(.url)"'
 ```
 
 ### Verify Proxy Cache is Enabled
 ```bash
-curl -s -k -u "admin:REMOVED_SECRET_HARBOR_ADMIN" \
+curl -s -k -u "admin:${HARBOR_ADMIN_PASSWORD}" \
   "https://harbor.dataknife.net/api/v2.0/projects?name=dockerhub" | \
   jq -r '.[] | select(.name == "dockerhub") | {
     name: .name,
@@ -115,6 +119,8 @@ curl -s -k -u "admin:REMOVED_SECRET_HARBOR_ADMIN" \
     proxy_cache_enabled: (if .registry_id != null and .registry_id != 0 then "YES" else "NO" end)
   }'
 ```
+
+**⚠️ Note**: Replace `${HARBOR_ADMIN_PASSWORD}` with your actual Harbor admin password from `.env` file or Harbor UI. Never commit passwords to git.
 
 ## Scripts Available
 

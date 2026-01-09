@@ -6,6 +6,17 @@ namespace: managed-cicd
 resources:
   - gitlab-runner-helmchart.yaml
 
-commonLabels:
-  app: gitlab-runner
-  managed-by: gitops
+# Cluster-specific overrides for nprd-apps
+# Add any nprd-apps specific configurations here
+# Examples:
+# - resource limits/requests
+# - storage class
+# - environment-specific values
+# - GitLab URL (if different per cluster)
+
+patches:
+  # Add patches here for nprd-apps specific configurations
+  # - path: resource-limits.yaml
+  #   target:
+  #     kind: HelmChart
+  #     name: gitlab-runner

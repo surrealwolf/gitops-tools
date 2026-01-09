@@ -5,12 +5,19 @@ namespace: managed-cicd
 
 resources:
   - github-runner-controller-helmchart.yaml
-  # RunnerDeployment and HorizontalRunnerAutoscaler
-  # Note: These require the controller to be running first
-  # If controller isn't ready, these will be created but won't work until controller is up
   - runnerdeployment.yaml
   - horizontalrunnerautoscaler.yaml
 
-commonLabels:
-  app: github-runner-controller
-  managed-by: gitops
+# Cluster-specific overrides for nprd-apps
+# Add any nprd-apps specific configurations here
+# Examples:
+# - resource limits/requests
+# - storage class
+# - environment-specific values
+
+patches:
+  # Add patches here for nprd-apps specific configurations
+  # - path: resource-limits.yaml
+  #   target:
+  #     kind: HelmChart
+  #     name: actions-runner-controller
