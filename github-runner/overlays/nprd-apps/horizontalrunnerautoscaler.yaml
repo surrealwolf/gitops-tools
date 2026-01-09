@@ -9,12 +9,22 @@ spec:
   minReplicas: 2
   maxReplicas: 10
   metrics:
-    # Scale based on percentage of runners in use
+    # Scale based on total number of queued and running workflow runs
+    # This detects queued jobs even when no runners are busy yet
+    - type: TotalNumberOfQueuedAndRunningWorkflowRuns
+      # Empty repositoryNames means organization-level (all repos)
+      repositoryNames: []
+      scaleUpThreshold: "1"    # Scale up when 1+ jobs are queued
+      scaleDownThreshold: "0"  # Scale down when no jobs are queued
+      scaleUpAdjustment: 2     # Add 2 runners when scaling up
+      scaleDownAdjustment: 1   # Remove 1 runner when scaling down
+    
+    # Also scale based on percentage of runners in use (for fine-tuning)
     - type: PercentageRunnersBusy
       scaleUpThreshold: "0.75"    # Scale up when 75% of runners are busy
       scaleDownThreshold: "0.25"  # Scale down when less than 25% are busy
-      scaleUpAdjustment: 2       # Add 2 runners when scaling up
-      scaleDownAdjustment: 1      # Remove 1 runner when scaling down
+      scaleUpAdjustment: 1        # Add 1 runner when scaling up
+      scaleDownAdjustment: 1     # Remove 1 runner when scaling down
   
   # Scale down delay to prevent rapid scaling
   scaleDownDelaySecondsAfterScaleOut: 300  # Wait 5 minutes before scaling down
