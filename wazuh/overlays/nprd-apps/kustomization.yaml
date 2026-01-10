@@ -16,6 +16,8 @@ resources:
   - wazuh-server-filebeat-configmap.yaml
   - wazuh-server-statefulset.yaml
   - wazuh-server-service.yaml
+  # Optional: UniFi decoders and rules (uncomment to enable)
+  # - wazuh-unifi-decoder-configmap.yaml
   
   # Wazuh Dashboard components
   - wazuh-dashboard-configmap.yaml

@@ -1,0 +1,71 @@
+# Wazuh UniFi Decoder ConfigMap
+# Optional: Custom decoders and rules for UniFi device logs
+# Mount this to /var/ossec/etc/decoders/custom/ or /var/ossec/etc/rules/custom/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wazuh-unifi-decoder-config
+  namespace: managed-tools
+  labels:
+    app: wazuh
+    component: server
+    managed-by: gitops
+data:
+  unifi_decoders.xml: |
+    <!-- UniFi Decoders for Wazuh -->
+    <!-- Decoder for UniFi log format -->
+    <decoder name="unifi">
+      <prematch>Ubiquiti\|UniFi Network</prematch>
+      <type>syslog</type>
+    </decoder>
+
+    <decoder name="unifi-custom">
+      <parent>unifi</parent>
+      <regex offset="after_prematch">\|(\S+)\|(\d+)\|(.+)\|(\d+)\|UNIFIcategory=(\w+) UNIFIsubCategory=(\w+) UNIFIhost=(\w+) UNIFIsite=(\w+)</regex>
+      <order>version,type,information,severity,UNIFIcategory,UNIFIsubCategory,UNIFIhost,UNIFIsite</order>
+    </decoder>
+
+    <!-- Alternative decoder for different UniFi log formats -->
+    <decoder name="unifi-syslog">
+      <prematch>^</prematch>
+      <regex>(\w+\s+\d+\s+\d+:\d+:\d+)\s+(\S+)\s+unifi:\s+(.+)$</regex>
+      <order>timestamp,hostname,message</order>
+    </decoder>
+
+  unifi_rules.xml: |
+    <!-- UniFi Rules for Wazuh -->
+    <!-- Rule group for UniFi events -->
+    <group name="unifi,">
+      <rule id="100001" level="3">
+        <decoded_as>unifi</decoded_as>
+        <description>UniFi event detected</description>
+      </rule>
+
+      <rule id="100002" level="5">
+        <decoded_as>unifi-custom</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>UNIFIcategory=auth</match>
+        <description>UniFi authentication event: $UNIFIsubCategory from $UNIFIhost</description>
+      </rule>
+
+      <rule id="100003" level="10">
+        <decoded_as>unifi-custom</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>UNIFIcategory=security</match>
+        <description>UniFi security event: $UNIFIsubCategory on $UNIFIhost</description>
+      </rule>
+
+      <rule id="100004" level="12">
+        <decoded_as>unifi-custom</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>UNIFIcategory=security.*failed|denied|blocked</match>
+        <description>UniFi security alert: $UNIFIsubCategory on $UNIFIhost</description>
+      </rule>
+
+      <rule id="100005" level="5">
+        <decoded_as>unifi-custom</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>UNIFIcategory=wireless</match>
+        <description>UniFi wireless event: $UNIFIsubCategory on $UNIFIhost</description>
+      </rule>
+    </group>

@@ -24,6 +24,10 @@ spec:
         managed-by: gitops
     spec:
       volumes:
+        - name: wazuh-server-config
+          configMap:
+            name: wazuh-server-config
+            defaultMode: 0640
         - name: filebeat-config
           configMap:
             name: wazuh-server-filebeat-config
@@ -48,12 +52,19 @@ spec:
           - containerPort: 1515
             name: agent-udp
             protocol: UDP
+          - containerPort: 514
+            name: syslog-udp
+            protocol: UDP
           - containerPort: 55000
             name: api
             protocol: TCP
         volumeMounts:
           - name: logs
             mountPath: /var/ossec/logs
+          - name: wazuh-server-config
+            mountPath: /var/ossec/etc/ossec.conf
+            subPath: ossec.conf
+            readOnly: true
           - name: filebeat-config
             mountPath: /etc/filebeat/filebeat.yml
             subPath: filebeat.yml
