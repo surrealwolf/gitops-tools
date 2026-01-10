@@ -13,15 +13,21 @@ metadata:
 data:
   syslog-remote.xml: |
     <!-- Syslog reception for UniFi and other external devices (port 514 UDP) -->
-    <!-- Allowed IPs includes:
-         - 192.168.0.0/16: External UniFi devices and direct access
-         - 10.0.0.0/8: Internal Kubernetes networks (pods, services) and proxy layer
-    -->
+    <!-- Multiple remote blocks needed as Wazuh doesn't support comma-separated IPs -->
+    <!-- External UniFi devices and direct access (192.168.x.x) -->
     <remote>
       <connection>syslog</connection>
       <port>514</port>
       <protocol>udp</protocol>
-      <allowed-ips>192.168.0.0/16,10.0.0.0/8</allowed-ips>
+      <allowed-ips>192.168.0.0/16</allowed-ips>
+    </remote>
+    <!-- Internal Kubernetes networks (pods, services) and proxy layer (10.x.x.x) -->
+    <!-- Needed when traffic comes through NodePort/proxy - Wazuh sees proxy/internal IP -->
+    <remote>
+      <connection>syslog</connection>
+      <port>514</port>
+      <protocol>udp</protocol>
+      <allowed-ips>10.0.0.0/8</allowed-ips>
     </remote>
   
   inject-syslog.sh: |
