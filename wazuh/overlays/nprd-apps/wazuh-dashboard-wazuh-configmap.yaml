@@ -73,7 +73,7 @@ data:
     #
     hosts:
       - default:
-          url: http://wazuh-server
+          url: https://wazuh-server
           port: 55000
           username: wazuh-wui
           password: wazuh-wui
