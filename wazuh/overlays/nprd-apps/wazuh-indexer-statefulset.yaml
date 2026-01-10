@@ -83,7 +83,7 @@ spec:
           securityContext:
             privileged: true
       containers:
-        - name: wazuh-indexer
+      - name: wazuh-indexer
           image: wazuh/wazuh-indexer:4.14.1
           resources:
             limits:
@@ -153,11 +153,11 @@ spec:
             - containerPort: 9300
               name: indexer-nodes
   volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: [ "ReadWriteOnce" ]
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
         # storageClassName will be set in overlay (truenas-nfs)
-        resources:
-          requests:
-            storage: 50Gi
+      resources:
+        requests:
+          storage: 50Gi

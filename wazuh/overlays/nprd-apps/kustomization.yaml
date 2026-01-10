@@ -11,7 +11,7 @@ resources:
   - wazuh-indexer-service.yaml
   
   # Wazuh Server (Manager) components
-  - wazuh-server-configmap.yaml
+  # - wazuh-server-configmap.yaml  # Temporarily disabled - incomplete config causing XML errors
   - wazuh-server-secret.yaml
   - wazuh-server-filebeat-configmap.yaml
   - wazuh-server-statefulset.yaml
