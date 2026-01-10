@@ -36,13 +36,13 @@ rke2-ingress-nginx-controller pods:
 
 ### Recommended DNS Configuration
 
-**For Ingress Hostnames** (e.g., `wazuh.dataknife.net`, `harbor.dataknife.net`):
+**For Ingress Hostnames** (e.g., `graylog.dataknife.net`, `harbor.dataknife.net`):
 
 **Use Worker Nodes Only** (Recommended):
 ```
-wazuh.dataknife.net.      IN  A  192.168.14.113
-wazuh.dataknife.net.      IN  A  192.168.14.114
-wazuh.dataknife.net.      IN  A  192.168.14.115
+graylog.dataknife.net.    IN  A  192.168.14.113
+graylog.dataknife.net.    IN  A  192.168.14.114
+graylog.dataknife.net.    IN  A  192.168.14.115
 
 harbor.dataknife.net.     IN  A  192.168.14.113
 harbor.dataknife.net.     IN  A  192.168.14.114
@@ -73,28 +73,28 @@ harbor.dataknife.net.     IN  A  192.168.14.115
 If you want maximum redundancy and don't mind adding load to control-plane:
 
 ```
-wazuh.dataknife.net.      IN  A  192.168.14.110
-wazuh.dataknife.net.      IN  A  192.168.14.111
-wazuh.dataknife.net.      IN  A  192.168.14.112
-wazuh.dataknife.net.      IN  A  192.168.14.113
-wazuh.dataknife.net.      IN  A  192.168.14.114
-wazuh.dataknife.net.      IN  A  192.168.14.115
+graylog.dataknife.net.    IN  A  192.168.14.110
+graylog.dataknife.net.    IN  A  192.168.14.111
+graylog.dataknife.net.    IN  A  192.168.14.112
+graylog.dataknife.net.    IN  A  192.168.14.113
+graylog.dataknife.net.    IN  A  192.168.14.114
+graylog.dataknife.net.    IN  A  192.168.14.115
 ```
 
 **Note**: This provides maximum redundancy but adds external traffic load to control-plane components.
 
 ## NodePort Services
 
-### Current Setup: Wazuh Syslog (SIEM)
+### Current Setup: Graylog Syslog (SIEM)
 
-The Wazuh Server service uses NodePort on port 30514 (UDP) for syslog/SIEM integration.
+The Graylog syslog service uses NodePort on port 30514 (UDP) for syslog/SIEM integration (UniFi CEF).
 
 **Recommended DNS Configuration:**
 
 ```
-wazuh-syslog.dataknife.net.  IN  A  192.168.14.113
-wazuh-syslog.dataknife.net.  IN  A  192.168.14.114
-wazuh-syslog.dataknife.net.  IN  A  192.168.14.115
+graylog-syslog.dataknife.net.  IN  A  192.168.14.113
+graylog-syslog.dataknife.net.  IN  A  192.168.14.114
+graylog-syslog.dataknife.net.  IN  A  192.168.14.115
 ```
 
 **Same Principle**: Use worker nodes to reduce load on control-plane components.
@@ -103,19 +103,19 @@ wazuh-syslog.dataknife.net.  IN  A  192.168.14.115
 
 ### Ingress Flow
 
-1. **DNS Resolution**: Client resolves `wazuh.dataknife.net` → Gets worker node IPs (113-115)
+1. **DNS Resolution**: Client resolves `graylog.dataknife.net` → Gets worker node IPs (113-115)
 2. **Traffic Routing**: Client connects to worker node IP (e.g., 192.168.14.113:443)
 3. **Ingress Controller**: Ingress controller pod on that worker node handles the request
-4. **Service Routing**: Ingress controller routes to backend service (`wazuh-dashboard:5601`)
+4. **Service Routing**: Ingress controller routes to backend service (`graylog:9000`)
 
 **Important**: Even though ingress controller pods run on all nodes, DNS should point to worker nodes only to avoid control-plane load.
 
 ### NodePort Flow
 
-1. **DNS Resolution**: Client resolves `wazuh-syslog.dataknife.net` → Gets worker node IPs (113-115)
+1. **DNS Resolution**: Client resolves `graylog-syslog.dataknife.net` → Gets worker node IPs (113-115)
 2. **Traffic Routing**: Client connects to worker node IP:NodePort (e.g., 192.168.14.113:30514)
-3. **Kubernetes Routing**: Kubernetes routes to service backend (`wazuh-server:514`)
-4. **Service Backend**: Request reaches the target pod
+3. **Kubernetes Routing**: Kubernetes routes to service backend (`graylog-syslog:514`)
+4. **Service Backend**: Request reaches the target pod (Graylog server with syslog input configured)
 
 **Important**: NodePort works on all nodes, but DNS should target worker nodes to reduce control-plane load.
 

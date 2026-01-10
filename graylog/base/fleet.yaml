@@ -1,12 +1,12 @@
-# Fleet configuration for Wazuh base
-# This file configures the base Wazuh bundle
+# Fleet configuration for Graylog base
+# This file configures the base Graylog bundle
 #
 # NOTE: This base bundle should typically NOT be deployed directly.
-# It's meant to be used by overlays (e.g., wazuh/overlays/nprd-apps).
+# It's meant to be used by overlays (e.g., graylog/overlays/nprd-apps).
 #
-# If your GitRepo monitors wazuh/base directly:
+# If your GitRepo monitors graylog/base directly:
 # - This bundle will be deployed to ALL clusters (unless you add cluster targeting)
-# - Consider monitoring wazuh/overlays/nprd-apps instead
+# - Consider monitoring graylog/overlays/nprd-apps instead
 #
 # If your GitRepo monitors the root:
 # - Fleet will create separate bundles for base and overlays

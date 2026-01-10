@@ -1,13 +1,13 @@
 # Fleet configuration for nprd-apps cluster
-# This file configures how Fleet deploys Wazuh to the nprd-apps cluster
+# This file configures how Fleet deploys Graylog to the nprd-apps cluster
 #
 # Fleet will use this configuration when the GitRepo monitors:
 # - The root directory (creates bundles for each directory)
-# - Or specifically the wazuh/overlays/nprd-apps path
+# - Or specifically the graylog/overlays/nprd-apps path
 #
-# If your GitRepo monitors wazuh/base, it won't see this overlay.
+# If your GitRepo monitors graylog/base, it won't see this overlay.
 # In that case, either:
-# 1. Change GitRepo to monitor wazuh/overlays/nprd-apps
+# 1. Change GitRepo to monitor graylog/overlays/nprd-apps
 # 2. Or change GitRepo to monitor root and use fleet.yaml for targeting
 
 defaultNamespace: managed-tools

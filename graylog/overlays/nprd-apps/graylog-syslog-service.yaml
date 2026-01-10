@@ -1,0 +1,41 @@
+# Graylog Syslog Service for UniFi CEF Input
+#
+# This service exposes Graylog's syslog input via NodePort for external access.
+# UniFi devices will send CEF-formatted syslog to this service.
+#
+# Note: Graylog syslog input must be configured via web UI or API after deployment.
+# The syslog input should be configured to:
+# - Listen on 0.0.0.0:514 (UDP)
+# - Use CEF codec for parsing UniFi logs
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: graylog-syslog
+  namespace: managed-tools
+  labels:
+    app: graylog
+    component: syslog
+    managed-by: gitops
+    cluster: nprd-apps
+spec:
+  type: NodePort
+  ports:
+  - name: syslog-udp
+    port: 514
+    targetPort: 514
+    protocol: UDP
+    nodePort: 30514
+    # NodePort 30514 maps to internal port 514 UDP (standard syslog port)
+    # Use any cluster node IP:30514 for UniFi SIEM integration
+    # Example: UniFi Network Application → System Logs → SIEM Integration
+    #          Syslog Server: <node-ip>:30514
+  selector:
+    app: graylog
+    component: server
+  # Note: This service targets the Graylog server pod
+  # The syslog input must be configured in Graylog web UI after deployment:
+  # 1. Go to System → Inputs
+  # 2. Launch new input → Syslog UDP
+  # 3. Configure: Title="UniFi Syslog CEF", Bind address="0.0.0.0:514", Codec="CEF"
+  # 4. Save and start the input

@@ -15,9 +15,8 @@ This directory contains comprehensive documentation for all tools and services m
 ### Harbor
 - **[Harbor Documentation](HARBOR.md)** - Harbor container registry setup and configuration
 
-### Wazuh
-- **[Wazuh Deployment Review](wazuh-deployment-review.md)** - Comprehensive Wazuh deployment review
-- **[Wazuh CPU Compatibility](wazuh-cpu-compatibility.md)** - CPU compatibility considerations for Wazuh
+### Graylog
+- **[Graylog Base Configuration](../graylog/base/README.md)** - Graylog SIEM and log management setup
 
 ### General
 - **[Deployment Guide](DEPLOYMENT.md)** - General deployment procedures
@@ -38,7 +37,7 @@ This directory contains comprehensive documentation for all tools and services m
 ├── github-runner/            # GitHub Actions Runner Controller
 ├── gitlab-runner/            # GitLab Runner
 ├── harbor/                   # Harbor container registry
-├── wazuh/                    # Wazuh security monitoring
+├── graylog/                  # Graylog SIEM and log management
 └── secrets/                  # Secret templates and examples
 ```
 

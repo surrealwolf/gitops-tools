@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: managed-tools
+
+resources:
+  # Base resources - overlay will include these and add Helm chart
+  # Note: namespace.yaml is optional if namespace already exists
+  # - namespace.yaml
+  - graylog-helmchart.yaml
+
+commonLabels:
+  app: graylog
+  managed-by: gitops

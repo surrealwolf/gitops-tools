@@ -1,0 +1,35 @@
+# Graylog Index Configuration - Example Settings
+#
+# This file documents the recommended index rotation and retention settings
+# that should be configured in Graylog web UI after deployment.
+#
+# To configure:
+# 1. Log in to Graylog web UI at https://graylog.dataknife.net
+# 2. Navigate to System → Indices
+# 3. Configure the following settings:
+#
+# Index Rotation:
+#   Strategy: Daily (rotate index every day at midnight UTC)
+#   Max number of indices: 20 (14 days + 6 day buffer for safety)
+#
+# Index Retention:
+#   Strategy: Delete indices after retention period
+#   Max age: 14 days (2 weeks)
+#   Action: Delete closed indices older than 14 days
+#
+# Index Configuration:
+#   Shards per index: 1 (single node setup)
+#   Replicas: 0 (single node setup)
+#   Index optimization: After rotation (optimize after index is closed)
+#
+# These settings ensure:
+# - 2 weeks of log retention (14 daily indices)
+# - Efficient storage usage with daily rotation
+# - Automatic cleanup of old indices
+# - Headroom for growth (20 indices allows for 6 additional days buffer)
+#
+# Storage Calculation:
+# - Base: 2 UniFi instances @ 250MB/day each = 500MB/day = 7GB for 14 days
+# - With overhead: 7GB * 1.5 = ~10.5GB
+# - Growth factor (20x): ~210GB
+# - Recommended storage: 250GB (configured in graylog-helmchart.yaml)

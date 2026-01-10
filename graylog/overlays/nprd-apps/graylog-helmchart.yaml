@@ -1,0 +1,133 @@
+# Graylog Helm Chart Configuration - nprd-apps Overlay
+#
+# Cluster-specific configuration for nprd-apps cluster
+# This overrides base configuration with cluster-specific settings
+#
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: graylog
+  namespace: managed-tools
+spec:
+  chart: graylog
+  repo: https://helm.graylog.org
+  targetNamespace: managed-tools
+  valuesContent: |-
+    # Graylog Configuration - nprd-apps cluster
+    graylog:
+      image:
+        repository: graylog/graylog
+        tag: "5.2"
+      replicas: 1
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+      # Graylog web interface port
+      service:
+        type: ClusterIP
+        port: 9000
+        targetPort: 9000
+      # Java heap size (should be 50% of memory limit)
+      javaOpts: "-Xms2g -Xmx2g -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseParNewGC -XX:-OmitStackTraceInFastThrow"
+      # Environment variables for Graylog configuration
+      env:
+        # Graylog root timezone
+        TZ: UTC
+        # Graylog server bind address
+        GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9000
+        # Graylog external URI (for web UI links)
+        GRAYLOG_HTTP_EXTERNAL_URI: https://graylog.dataknife.net/
+        # Elasticsearch/OpenSearch connection
+        GRAYLOG_ELASTICSEARCH_HOSTS: http://graylog-opensearch:9200
+        # MongoDB connection
+        GRAYLOG_MONGODB_URI: mongodb://graylog-mongodb:27017/graylog
+        # Password secret (generate a secure random string, e.g., openssl rand -base64 64)
+        # Note: This should be set via secret in production
+        GRAYLOG_PASSWORD_SECRET: "changeme-password-secret-change-in-production"
+        # Root password SHA2 (generate with: echo -n "password" | shasum -a 256)
+        # Note: Default password is "admin" (SHA2: 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918)
+        # Change this to your desired password
+        GRAYLOG_ROOT_PASSWORD_SHA2: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"
+        # Index rotation and retention configuration (configured via Graylog web UI after deployment)
+        # Recommended settings for 2 weeks retention:
+        #   - Index rotation strategy: Daily (rotate index every day)
+        #   - Index retention: 14 days (keep indices for 2 weeks)
+        #   - Max number of indices: 20 (14 days + buffer)
+        #   - Index deletion: Delete closed indices older than 14 days
+        # Note: These settings are configured in Graylog web UI under System → Indices
+    
+    # MongoDB Configuration (Graylog metadata store)
+    mongodb:
+      enabled: true
+      architecture: standalone
+      auth:
+        enabled: false  # Disable auth for simplicity (enable for production)
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 20Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    
+    # OpenSearch Configuration (Graylog log storage)
+    # SIZED FOR: 2 weeks retention from 2 UniFi instances + growth for more use cases
+    # Calculation:
+    #   - Base: 2 UniFi instances @ ~250MB/day each = 500MB/day = 7GB for 2 weeks
+    #   - With overhead (indexing + metadata): 7GB * 1.5 = ~10.5GB
+    #   - Growth factor (more instances + other log sources): 20x = ~210GB
+    #   - Recommended: 250GB (safe margin for growth)
+    opensearch:
+      enabled: true
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 250Gi  # Increased from 50Gi to 250Gi for 2 weeks retention + growth
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+      # Java heap size (should be 50% of memory limit)
+      javaOpts: "-Xms2g -Xmx2g"
+    
+    # Ingress Configuration for nprd-apps cluster
+    ingress:
+      enabled: true
+      className: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+        # Note: TLS secret 'wildcard-dataknife-net-tls' must exist in the namespace
+        # Use the generate-wildcard-cert.sh script to create a cluster-wide wildcard certificate
+      hosts:
+        - host: graylog.dataknife.net
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        enabled: true
+        secretName: wildcard-dataknife-net-tls
+    
+    # Persistence for Graylog (optional, typically not needed as logs stored in OpenSearch)
+    persistence:
+      enabled: false
+    
+    # Security Context
+    securityContext:
+      runAsUser: 1100
+      runAsGroup: 1100
+      fsGroup: 1100

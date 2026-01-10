@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: managed-tools
+
+resources:
+  # Cluster-specific Helm chart configuration (contains all values)
+  - graylog-helmchart.yaml
+  # Syslog service for UniFi CEF input (NodePort for external access)
+  - graylog-syslog-service.yaml
+  # Index configuration documentation (reference only, not deployed)
+  # - graylog-index-config.yaml  # Uncomment if you want to reference this file
+
+commonLabels:
+  app: graylog
+  managed-by: gitops
+  cluster: nprd-apps

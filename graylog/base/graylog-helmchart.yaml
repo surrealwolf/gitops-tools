@@ -1,0 +1,119 @@
+# Graylog Helm Chart Configuration
+#
+# Deploys Graylog using the official Helm chart from https://helm.graylog.org
+# Graylog requires MongoDB and OpenSearch (or Elasticsearch) as dependencies.
+# The Helm chart can deploy these automatically or use external services.
+#
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: graylog
+  namespace: managed-tools
+spec:
+  chart: graylog
+  repo: https://helm.graylog.org
+  targetNamespace: managed-tools
+  valuesContent: |-
+    # Graylog Configuration
+    # Base configuration - overlay will customize for nprd-apps cluster
+    graylog:
+      image:
+        repository: graylog/graylog
+        tag: "5.2"
+      replicas: 1
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+      # Graylog web interface port
+      service:
+        type: ClusterIP
+        port: 9000
+        targetPort: 9000
+      # Java heap size (should be 50% of memory limit)
+      javaOpts: "-Xms2g -Xmx2g -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseParNewGC -XX:-OmitStackTraceInFastThrow"
+    
+    # MongoDB Configuration (Graylog metadata store)
+    # Option 1: Deploy MongoDB with Helm chart (internal)
+    mongodb:
+      enabled: true
+      architecture: standalone
+      auth:
+        enabled: false  # Disable auth for simplicity (enable for production)
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 20Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    
+    # OpenSearch Configuration (Graylog log storage)
+    # Option 1: Deploy OpenSearch with Helm chart (internal)
+    opensearch:
+      enabled: true
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 50Gi
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+      # Java heap size (should be 50% of memory limit)
+      javaOpts: "-Xms2g -Xmx2g"
+    
+    # Ingress Configuration (configured in overlay for cluster-specific host)
+    ingress:
+      enabled: false  # Enable in overlay for cluster-specific host
+      className: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      tls:
+        enabled: true
+        secretName: wildcard-dataknife-net-tls
+    
+    # Syslog Input Configuration for UniFi CEF
+    # Note: Syslog inputs are configured via Graylog web UI or API after deployment
+    # The Helm chart doesn't have built-in syslog input configuration
+    # We'll need to configure via ConfigMap or init job
+    # For now, we'll expose syslog via NodePort service (configured in overlay)
+    
+    # Environment variables for Graylog configuration
+    env:
+      # Graylog root timezone
+      TZ: UTC
+      # Graylog server bind address
+      GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9000
+      # Graylog external URI (configured in overlay)
+      # GRAYLOG_HTTP_EXTERNAL_URI: https://graylog.dataknife.net/
+      # Elasticsearch/OpenSearch connection
+      GRAYLOG_ELASTICSEARCH_HOSTS: http://graylog-opensearch:9200
+      # MongoDB connection
+      GRAYLOG_MONGODB_URI: mongodb://graylog-mongodb:27017/graylog
+      # Password secret (should be set in overlay)
+      # GRAYLOG_PASSWORD_SECRET: <generate-secure-secret>
+      # Root password SHA2 (should be set in overlay)
+      # GRAYLOG_ROOT_PASSWORD_SHA2: <generate-sha2-hash>
+    
+    # Persistence for Graylog (optional, typically not needed as logs stored in OpenSearch)
+    persistence:
+      enabled: false
+    
+    # Security Context (optional)
+    securityContext:
+      runAsUser: 1100
+      runAsGroup: 1100
+      fsGroup: 1100
