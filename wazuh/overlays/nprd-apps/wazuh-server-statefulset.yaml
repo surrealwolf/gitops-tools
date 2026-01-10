@@ -1,16 +1,5 @@
 # Wazuh Server StatefulSet
-#
-# This is a placeholder. Replace with actual Wazuh Server StatefulSet
-# from the official wazuh-kubernetes repository.
-#
-# Key requirements:
-# - Use StatefulSet for persistent storage (logs, configuration)
-# - Mount TLS certificates from secret
-# - Configure persistent volume for logs and configuration
-# - Set appropriate resource limits
-# - Use storage class: truenas-nfs (configured in overlay)
-# - Connect to wazuh-indexer service
-#
+# Based on official Wazuh Kubernetes manifests
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -34,20 +23,51 @@ spec:
         component: server
         managed-by: gitops
     spec:
+      volumes:
+        - name: filebeat-config
+          configMap:
+            name: wazuh-server-filebeat-config
+        - name: indexer-certs
+          secret:
+            secretName: wazuh-certs
+            defaultMode: 0600
       containers:
       - name: wazuh-server
         image: wazuh/wazuh-manager:4.14.1
-        # Using 4.14.1 (latest) - SecurityManager disabled by default since 4.12.0+
-        # CPU compatibility: Works with 'host' CPU type (Proxmox VMs configured)
-        # Add configuration, volumes, resources, etc.
-        # Refer to official Wazuh Kubernetes manifests
-        # Must connect to wazuh-indexer service
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+        ports:
+          - containerPort: 1514
+            name: agent-tcp
+            protocol: TCP
+          - containerPort: 1515
+            name: agent-udp
+            protocol: UDP
+          - containerPort: 55000
+            name: api
+            protocol: TCP
+        volumeMounts:
+          - name: logs
+            mountPath: /var/ossec/logs
+          - name: filebeat-config
+            mountPath: /etc/filebeat/filebeat.yml
+            subPath: filebeat.yml
+            readOnly: true
+          - name: indexer-certs
+            mountPath: /etc/filebeat/certs/root-ca.pem
+            subPath: root-ca.pem
+            readOnly: true
   volumeClaimTemplates:
   - metadata:
       name: logs
     spec:
       accessModes: [ "ReadWriteOnce" ]
-      # storageClassName will be set in overlay
+      storageClassName: truenas-nfs
       resources:
         requests:
           storage: 10Gi

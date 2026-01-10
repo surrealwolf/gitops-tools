@@ -13,6 +13,7 @@ resources:
   # Wazuh Server (Manager) components
   - wazuh-server-configmap.yaml
   - wazuh-server-secret.yaml
+  - wazuh-server-filebeat-configmap.yaml
   - wazuh-server-statefulset.yaml
   - wazuh-server-service.yaml
   
