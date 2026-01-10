@@ -25,6 +25,10 @@ spec:
   # Runner group name (must exist in GitHub org settings)
   # Create this group in: https://github.com/organizations/DataKnifeAI/settings/actions/runners
   # Configure it to allow "All repositories" or select specific repos
+  # IMPORTANT: For PUBLIC repositories, you MUST enable "Allow public repositories" flag
+  # in the runner group settings, otherwise workflows will remain queued!
+  # Go to: https://github.com/organizations/DataKnifeAI/settings/actions/runner-groups
+  # Click on your group → Enable "Allow public repositories" → Save
   # NOTE: Runner group must exist BEFORE creating this resource
   runnerGroup: NRPD Auto Scale
   
@@ -42,12 +46,21 @@ spec:
   maxRunners: 10
   
   # Minimum number of runners to maintain
-  # NOTE: With ephemeral runners, setting minRunners > 0 can cause an endless loop
-  # because ephemeral runners exit when no jobs are queued, but the listener
-  # tries to maintain the minimum by creating new runners.
-  # Setting minRunners: 0 means runners will only be created when jobs are queued.
-  # This is the recommended configuration for ephemeral runners.
-  minRunners: 0
+  # CRITICAL: This is a workaround for GitHub issue #4000:
+  # https://github.com/actions/actions-runner-controller/issues/4000
+  # "Runners are being removed for being idle before its job has had a chance to be assigned to it"
+  #
+  # The issue: Ephemeral runners are killed after ~5 seconds if idle, before jobs can be assigned.
+  # The workaround: Set minRunners > 0 to keep runners alive and idle, allowing jobs to be assigned immediately.
+  #
+  # IMPORTANT: This requires the "Allow public repositories" flag to be enabled in the runner group
+  # settings, otherwise public repos can't use these runners and the endless loop will continue.
+  # Enable it at: https://github.com/organizations/DataKnifeAI/settings/actions/runner-groups
+  # Click "NRPD Auto Scale" → Enable "Allow public repositories" → Save
+  #
+  # Without this flag, jobs can't be assigned to runners, causing them to exit, which triggers
+  # the listener to create more runners, creating an endless loop.
+  minRunners: 2
   
   # Container spec for the runner pods
   template:
@@ -63,6 +76,11 @@ spec:
             cpu: "2"  # Use normalized format to match Kubernetes (2000m = 2)
             memory: 4Gi
   
-  # Ephemeral runners are default in official ARC
-  # They automatically clean up after job completion
-  # This is built-in and doesn't need explicit configuration
+  # Official ARC uses ephemeral runners by default
+  # Ephemeral runners automatically clean up after job completion
+  # This is built-in behavior - there's no ephemeral field to configure
+  # With minRunners: 2, runners stay alive between jobs (allowing immediate job assignment)
+  # but still clean up after completing each job, maintaining ephemeral behavior per job
+  #
+  # See GitHub issue #4000 for details on why minRunners > 0 is needed:
+  # https://github.com/actions/actions-runner-controller/issues/4000
