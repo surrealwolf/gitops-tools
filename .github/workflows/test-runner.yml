@@ -1,49 +1,60 @@
 name: Test Self-Hosted Runner
-
-on:
-  workflow_dispatch:  # Allows manual triggering
+true:
+  workflow_dispatch: null
   push:
     branches:
-      - main
-
-# Explicit permissions to ensure workflow can run
+    - main
 permissions:
   contents: read
   actions: read
-
 jobs:
   test-runner:
-    # Use kubernetes label (runnerScaleSetName in AutoscalingRunnerSet)
-    # Changed from "self-hosted" due to known bug (GitHub issue #3330):
-    # ARC runners may not automatically receive "self-hosted" label
-    # runnerScaleSetName: kubernetes matches this runs-on label
     runs-on: kubernetes
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Display runner info
-        run: |
-          echo "Runner OS: $(uname -a)"
-          echo "Runner hostname: $(hostname)"
-          echo "Working directory: $(pwd)"
-          echo "Runner labels: ${{ runner.labels }}"
-          echo "Runner name: ${{ runner.name }}"
-      
-      - name: Test basic commands
-        run: |
-          echo "Testing basic commands..."
-          echo "Date: $(date)"
-          echo "Uptime: $(uptime)"
-          echo "Kubernetes context:"
-          kubectl config current-context || echo "kubectl not available"
-      
-      - name: Test environment
-        run: |
-          echo "Environment variables:"
-          env | grep -E "RUNNER|GITHUB|CI" | sort
-      
-      - name: Success message
-        run: |
-          echo "✅ Self-hosted runner is working correctly!"
-          echo "Runner successfully executed all test steps."
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Display runner info
+      run: 'echo "Runner OS: $(uname -a)"
+
+        echo "Runner hostname: $(hostname)"
+
+        echo "Working directory: $(pwd)"
+
+        echo "Runner labels: ${{ runner.labels }}"
+
+        echo "Runner name: ${{ runner.name }}"
+
+        '
+    - name: Test basic commands
+      run: 'echo "Testing basic commands..."
+
+        echo "Date: $(date)"
+
+        echo "Uptime: $(uptime)"
+
+        echo "Kubernetes context:"
+
+        kubectl config current-context || echo "kubectl not available"
+
+        '
+    - name: Test environment
+      run: 'echo "Environment variables:"
+
+        env | grep -E "RUNNER|GITHUB|CI" | sort
+
+        '
+    - name: Success message
+      run: 'echo "✅ Self-hosted runner is working correctly!"
+
+        echo "Runner successfully executed all test steps."
+
+        '
+    - name: Push to GitLab
+      if: success()
+      run: 'git remote add gitlab https://gitlab.com/dk-raas/dkai/gitops-tools.git || true
+
+        git config user.name "GitHub Actions"
+
+        git config user.email "actions@github.com"
+
+        git push gitlab HEAD:main --force || echo "GitLab push failed (may need GITLAB_TOKEN secret)"'

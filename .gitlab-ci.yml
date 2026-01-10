@@ -1,0 +1,45 @@
+stages:
+- test
+variables: {}
+test-runner_test-runner:
+  stage: test
+  rules:
+  - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"
+  - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  image: ubuntu:latest
+  script:
+  - 'echo ''Display runner info''
+
+    echo "Runner OS: $(uname -a)"
+
+    echo "Runner hostname: $(hostname)"
+
+    echo "Working directory: $(pwd)"
+
+    echo "Runner labels: ${{ runner.labels }}"
+
+    echo "Runner name: ${{ runner.name }}"
+
+    '
+  - 'echo ''Test basic commands''
+
+    echo "Testing basic commands..."
+
+    echo "Date: $(date)"
+
+    echo "Uptime: $(uptime)"
+
+    echo "Kubernetes context:"
+
+    kubectl config current-context || echo "kubectl not available"
+
+    '
+  - 'echo ''Test environment''
+
+    echo "Environment variables:"
+
+    env | grep -E "RUNNER|GITHUB|CI" | sort
+
+    '
+  - "echo 'Success message'\necho \"\u2705 Self-hosted runner is working correctly!\"\necho \"Runner successfully executed\
+    \ all test steps.\"\n"
