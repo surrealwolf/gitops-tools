@@ -51,18 +51,25 @@ spec:
         command: ['sh', '-c']
         args:
         - |
-          mkdir -p /wazuh-config-target/data/wazuh/config
-          cp /wazuh-config-source/wazuh.yml /wazuh-config-target/data/wazuh/config/wazuh.yml
-          chown -R 1000:1000 /wazuh-config-target
-          chmod -R 755 /wazuh-config-target
+          # Create directory structure
+          mkdir -p /wazuh-config/data/wazuh/config
+          # Copy our config file
+          cp /config-source/wazuh.yml /wazuh-config/data/wazuh/config/wazuh.yml
+          # Set proper ownership and permissions
+          chown -R 1000:1000 /wazuh-config
+          chmod -R 755 /wazuh-config
+          chmod 644 /wazuh-config/data/wazuh/config/wazuh.yml
+          echo "Config file copied and permissions set"
+          ls -la /wazuh-config/data/wazuh/config/
+          cat /wazuh-config/data/wazuh/config/wazuh.yml | grep -A 5 "hosts:"
         securityContext:
           runAsUser: 0
         volumeMounts:
-        - name: wazuh-config
-          mountPath: /wazuh-config-source
+        - name: wazuh-config-source
+          mountPath: /config-source
           readOnly: true
-        - name: wazuh-config-data
-          mountPath: /wazuh-config-target
+        - name: wazuh-config-persistent
+          mountPath: /wazuh-config
       containers:
       - name: wazuh-dashboard
         image: wazuh/wazuh-dashboard:4.14.1
@@ -101,7 +108,7 @@ spec:
           readOnly: true
         - name: keystore
           mountPath: /etc/wazuh-dashboard
-        - name: wazuh-config-data
+        - name: wazuh-config-persistent
           mountPath: /usr/share/wazuh-dashboard/data
       volumes:
       - name: config
@@ -112,8 +119,8 @@ spec:
           secretName: wazuh-certs
       - name: keystore
         emptyDir: {}
-      - name: wazuh-config
+      - name: wazuh-config-source
         configMap:
           name: wazuh-dashboard-wazuh-config
-      - name: wazuh-config-data
+      - name: wazuh-config-persistent
         emptyDir: {}

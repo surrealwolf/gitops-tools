@@ -65,13 +65,21 @@ spec:
   # Container spec for the runner pods
   template:
     spec:
+      # CRITICAL FIX: Set restartPolicy to Never for ephemeral runners
+      # With Always (default), Kubernetes restarts completed pods, causing endless loop
+      # Ephemeral runners should exit cleanly and NOT restart
+      # This is the KEY missing configuration causing the endless loop!
+      restartPolicy: Never
+      
       containers:
       - name: runner
         image: ghcr.io/actions/actions-runner:latest
         resources:
+          # Increased requests to prevent premature exits
+          # Low resource requests can cause pods to exit prematurely
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 500m  # Increased from 100m to prevent resource starvation
+            memory: 512Mi  # Increased from 128Mi to prevent OOM kills
           limits:
             cpu: "2"  # Use normalized format to match Kubernetes (2000m = 2)
             memory: 4Gi
