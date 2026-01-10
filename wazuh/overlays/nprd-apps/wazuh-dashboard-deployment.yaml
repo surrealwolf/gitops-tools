@@ -128,15 +128,19 @@ spec:
           while true; do
             # Check if config file exists at the correct location (Dashboard reads from wazuh/config, not data/wazuh/config)
             if [ -f /wazuh-config/wazuh/config/wazuh.yml ]; then
-              # Check if it contains our correct URL
-              if ! grep -q "url: http://wazuh-server" /wazuh-config/wazuh/config/wazuh.yml 2>/dev/null; then
+              # Check if it contains our correct URL (https://wazuh-server without port in URL, and port field separately)
+              if ! grep -q "url: https://wazuh-server$" /wazuh-config/wazuh/config/wazuh.yml 2>/dev/null || ! grep -q "port: 55000" /wazuh-config/wazuh/config/wazuh.yml 2>/dev/null; then
                 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Config incorrect, restoring..."
                 cp /wazuh-config-backup/wazuh/config/wazuh.yml /wazuh-config/wazuh/config/wazuh.yml
                 chmod 644 /wazuh-config/wazuh/config/wazuh.yml
                 chown 1000:1000 /wazuh-config/wazuh/config/wazuh.yml
                 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Config restored successfully"
                 # Verify it was restored
-                grep "url: http://wazuh-server" /wazuh-config/wazuh/config/wazuh.yml && echo "Verified: Config correct" || echo "ERROR: Config restoration failed"
+                if grep -q "url: https://wazuh-server$" /wazuh-config/wazuh/config/wazuh.yml && grep -q "port: 55000" /wazuh-config/wazuh/config/wazuh.yml; then
+                  echo "Verified: Config correct"
+                else
+                  echo "ERROR: Config restoration failed"
+                fi
               else
                 echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Config is correct"
               fi
