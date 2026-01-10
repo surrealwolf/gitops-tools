@@ -31,11 +31,12 @@ spec:
     targetPort: 1515
     protocol: UDP
   - name: syslog-udp
-    port: 514
-    targetPort: 514
+    port: 5140
+    targetPort: 5140
     protocol: UDP
     nodePort: 30514
-    # NodePort 30514 maps to internal port 514 UDP
+    # NodePort 30514 maps to internal port 5140 UDP (non-privileged)
+    # Using port 5140 instead of 514 to avoid CAP_NET_BIND_SERVICE requirement
     # Use any cluster node IP:30514 for SIEM integration
   - name: api
     port: 55000

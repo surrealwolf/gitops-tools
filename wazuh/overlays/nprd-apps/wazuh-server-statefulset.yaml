@@ -185,10 +185,6 @@ spec:
       containers:
       - name: wazuh-server
         image: wazuh/wazuh-manager:4.14.1
-        securityContext:
-          capabilities:
-            add:
-              - NET_BIND_SERVICE  # Required to bind to privileged port 514 (syslog)
         resources:
           limits:
             cpu: 2000m
@@ -203,7 +199,7 @@ spec:
           - containerPort: 1515
             name: agent-udp
             protocol: UDP
-          - containerPort: 514
+          - containerPort: 5140
             name: syslog-udp
             protocol: UDP
           - containerPort: 55000
