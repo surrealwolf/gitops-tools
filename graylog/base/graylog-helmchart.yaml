@@ -1,6 +1,7 @@
 # Graylog Helm Chart Configuration
 #
-# Deploys Graylog using the official Helm chart from https://helm.graylog.org
+# Deploys Graylog using the official Helm chart from https://helm.graylog.io
+# Official repository: https://github.com/graylog2/graylog-helm
 # Graylog requires MongoDB and OpenSearch (or Elasticsearch) as dependencies.
 # The Helm chart can deploy these automatically or use external services.
 #
@@ -11,7 +12,7 @@ metadata:
   namespace: managed-tools
 spec:
   chart: graylog
-  repo: https://helm.graylog.org
+  repo: https://helm.graylog.io
   targetNamespace: managed-tools
   valuesContent: |-
     # Graylog Configuration
