@@ -52,10 +52,9 @@ jobs:
         '
     - name: Push to GitLab
       if: success()
-      run: 'git remote add gitlab https://gitlab.com/dk-raas/dkai/gitops-tools.git || true
-
+      env:
+        GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+      run: |
         git config user.name "GitHub Actions"
-
         git config user.email "actions@github.com"
-
-        git push gitlab HEAD:main --force || echo "GitLab push failed (may need GITLAB_TOKEN secret)"'
+        git push https://oauth2:${GITLAB_TOKEN}@gitlab.com/dk-raas/dkai/gitops-tools.git HEAD:main --force || echo "GitLab push failed"
