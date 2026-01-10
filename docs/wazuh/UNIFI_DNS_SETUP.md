@@ -14,13 +14,30 @@ Instead of using a single node IP, you can create a DNS A record with multiple I
 
 ### Option 1: Using Your DNS Server
 
-Create multiple A records for the same hostname pointing to the first 3 cluster nodes:
+**Recommended: Worker Nodes Only** (Best Practice)
+
+Create multiple A records pointing to worker nodes to reduce load on control-plane components:
+
+```
+wazuh-syslog.dataknife.net.  IN  A  192.168.14.113
+wazuh-syslog.dataknife.net.  IN  A  192.168.14.114
+wazuh-syslog.dataknife.net.  IN  A  192.168.14.115
+```
+
+**Alternative: All Nodes** (Maximum Redundancy)
+
+For maximum redundancy, include all nodes (both control-plane and worker):
 
 ```
 wazuh-syslog.dataknife.net.  IN  A  192.168.14.110
 wazuh-syslog.dataknife.net.  IN  A  192.168.14.111
 wazuh-syslog.dataknife.net.  IN  A  192.168.14.112
+wazuh-syslog.dataknife.net.  IN  A  192.168.14.113
+wazuh-syslog.dataknife.net.  IN  A  192.168.14.114
+wazuh-syslog.dataknife.net.  IN  A  192.168.14.115
 ```
+
+**Recommendation**: Use worker nodes (113-115) for better separation of concerns. Control-plane nodes handle critical cluster operations and should have reduced external traffic load.
 
 **How it works:**
 - DNS server returns all 3 IPs in response
@@ -36,11 +53,22 @@ If you want to manage DNS within Kubernetes, you can add entries to CoreDNS:
 # Edit CoreDNS ConfigMap
 kubectl --context=nprd-apps edit configmap coredns -n kube-system
 
-# Add hostname mapping in hosts section:
+# Add hostname mapping in hosts section (recommended: worker nodes):
+hosts {
+    192.168.14.113 wazuh-syslog.dataknife.net
+    192.168.14.114 wazuh-syslog.dataknife.net
+    192.168.14.115 wazuh-syslog.dataknife.net
+    fallthrough
+}
+
+# Or for all nodes (maximum redundancy):
 hosts {
     192.168.14.110 wazuh-syslog.dataknife.net
     192.168.14.111 wazuh-syslog.dataknife.net
     192.168.14.112 wazuh-syslog.dataknife.net
+    192.168.14.113 wazuh-syslog.dataknife.net
+    192.168.14.114 wazuh-syslog.dataknife.net
+    192.168.14.115 wazuh-syslog.dataknife.net
     fallthrough
 }
 ```
@@ -60,15 +88,41 @@ If you're using an external DNS provider (e.g., DNS server on your network):
 
 ## Get Cluster Node IPs
 
+### Recommended: Worker Nodes (Best Practice)
+
+For external traffic, it's best practice to use worker nodes instead of control-plane nodes to reduce load on critical control components.
+
 ```bash
-# Get first 3 cluster node IPs
-kubectl --context=nprd-apps get nodes -o jsonpath='{range .items[0:3]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}'
+# Get worker node IPs (recommended)
+kubectl --context=nprd-apps get nodes -l '!node-role.kubernetes.io/control-plane' -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}'
+
+# Or get all nodes and filter manually
+kubectl --context=nprd-apps get nodes -o wide
 ```
 
-Current first 3 nodes:
-- `192.168.14.110`
-- `192.168.14.111`
-- `192.168.14.112`
+**Recommended Worker Nodes:**
+- `192.168.14.113` (nprd-apps-worker-1)
+- `192.168.14.114` (nprd-apps-worker-2)
+- `192.168.14.115` (nprd-apps-worker-3)
+
+### Alternative: All Nodes (Maximum Redundancy)
+
+For maximum redundancy, you can include all nodes:
+
+```bash
+# Get all cluster node IPs
+kubectl --context=nprd-apps get nodes -o jsonpath='{range .items[*]}{.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}'
+```
+
+**All Nodes:**
+- `192.168.14.110` (control-plane)
+- `192.168.14.111` (control-plane)
+- `192.168.14.112` (control-plane)
+- `192.168.14.113` (worker)
+- `192.168.14.114` (worker)
+- `192.168.14.115` (worker)
+
+**Note**: Using all nodes provides maximum redundancy but includes control-plane nodes which handle critical cluster operations.
 
 ## Verify DNS Resolution
 
@@ -170,11 +224,25 @@ For production with high availability, DNS round-robin is recommended.
 
 ## Example Complete Setup
 
-1. **DNS Server Configuration:**
+### Recommended: Worker Nodes Only
+
+1. **DNS Server Configuration (Best Practice):**
+   ```
+   wazuh-syslog.dataknife.net.  IN  A  192.168.14.113
+   wazuh-syslog.dataknife.net.  IN  A  192.168.14.114
+   wazuh-syslog.dataknife.net.  IN  A  192.168.14.115
+   ```
+
+### Alternative: All Nodes (Maximum Redundancy)
+
+1. **DNS Server Configuration (All Nodes):**
    ```
    wazuh-syslog.dataknife.net.  IN  A  192.168.14.110
    wazuh-syslog.dataknife.net.  IN  A  192.168.14.111
    wazuh-syslog.dataknife.net.  IN  A  192.168.14.112
+   wazuh-syslog.dataknife.net.  IN  A  192.168.14.113
+   wazuh-syslog.dataknife.net.  IN  A  192.168.14.114
+   wazuh-syslog.dataknife.net.  IN  A  192.168.14.115
    ```
 
 2. **UniFi Controller:**

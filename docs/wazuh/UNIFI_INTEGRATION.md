@@ -48,13 +48,15 @@ kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
 ```
 
 **Example Node IPs:**
-- `192.168.14.110`, `192.168.14.111`, `192.168.14.112` (first 3 nodes)
+- **Recommended (Worker Nodes)**: `192.168.14.113`, `192.168.14.114`, `192.168.14.115`
+- **All Nodes**: `192.168.14.110-115` (includes control-plane nodes)
 - **External Syslog**: `<node-ip>:30514` (UDP) OR use hostname `wazuh-syslog.dataknife.net:30514`
 - NodePort `30514` maps to internal port `514` UDP
 
 **Important**: 
 - Use **any cluster node IP** with port **30514** (UDP). All nodes can receive syslog traffic.
-- **Recommended**: Use hostname with multiple A records (round-robin DNS) for redundancy - see [UNIFI_DNS_SETUP.md](./UNIFI_DNS_SETUP.md)
+- **Recommended**: Use worker nodes (113-115) to reduce load on control-plane components
+- **Best Practice**: Use hostname with multiple A records pointing to worker nodes for redundancy - see [UNIFI_DNS_SETUP.md](./UNIFI_DNS_SETUP.md)
 
 ### 3. Configure UniFi Network Application
 
