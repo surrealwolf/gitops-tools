@@ -83,7 +83,8 @@ If you're using an external DNS provider (e.g., DNS server on your network):
 2. **Create multiple A records:**
    - Hostname: `wazuh-syslog.dataknife.net`
    - Type: A
-   - IPs: `192.168.14.110`, `192.168.14.111`, `192.168.14.112`
+   - **Recommended IPs**: `192.168.14.113`, `192.168.14.114`, `192.168.14.115` (worker nodes)
+   - **Or all IPs**: `192.168.14.110-115` (all nodes for maximum redundancy)
    - TTL: 300-600 seconds (5-10 minutes)
 
 ## Get Cluster Node IPs
