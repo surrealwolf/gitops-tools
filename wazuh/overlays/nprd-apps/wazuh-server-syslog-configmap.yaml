@@ -13,11 +13,15 @@ metadata:
 data:
   syslog-remote.xml: |
     <!-- Syslog reception for UniFi and other external devices (port 514 UDP) -->
+    <!-- Allowed IPs includes:
+         - 192.168.0.0/16: External UniFi devices and direct access
+         - 10.0.0.0/8: Internal Kubernetes networks (pods, services) and proxy layer
+    -->
     <remote>
       <connection>syslog</connection>
       <port>514</port>
       <protocol>udp</protocol>
-      <allowed-ips>192.168.0.0/16</allowed-ips>
+      <allowed-ips>192.168.0.0/16,10.0.0.0/8</allowed-ips>
     </remote>
   
   inject-syslog.sh: |
