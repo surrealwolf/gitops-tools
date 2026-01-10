@@ -1,11 +1,11 @@
 # Wazuh Server Service
 #
-# This service exposes Wazuh Server for:
-# - Agent connections (port 1514: TCP, port 1515: UDP)
-# - API access (port 55000)
+# SIEM Integration Service - Exposes Wazuh Server for:
+# - Agent connections (port 1514: TCP, port 1515: UDP) - ClusterIP only
+# - Syslog/SIEM reception (port 514: UDP) - LoadBalancer with external IP
+# - API access (port 55000) - ClusterIP only
 #
-# For external agent access, you may need a LoadBalancer or NodePort service.
-# This can be configured in the overlay.
+# For SIEM integrations (UniFi, etc.), use the LoadBalancer external IP on port 514 UDP
 #
 apiVersion: v1
 kind: Service
@@ -16,8 +16,10 @@ metadata:
     app: wazuh
     component: server
     managed-by: gitops
+  annotations:
+    service.beta.kubernetes.io/load-balancer-source-ranges: "0.0.0.0/0"  # Adjust for your network
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
   - name: agent-tcp
     port: 1514
@@ -31,7 +33,7 @@ spec:
     port: 514
     targetPort: 514
     protocol: UDP
-    nodePort: 30514
+    # Standard SIEM syslog port 514 (UDP)
   - name: api
     port: 55000
     targetPort: 55000

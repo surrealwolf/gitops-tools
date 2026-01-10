@@ -23,27 +23,31 @@ UniFi devices (switches, access points, gateways, etc.) can send syslog messages
 ### 1. Configure Wazuh Server (Already Done)
 
 The Wazuh Server is configured with:
-- **Syslog listener**: Port 514 UDP
-- **Service type**: NodePort (exposed on all cluster nodes)
-- **External access**: Port 30514 UDP on any cluster node IP
+- **Syslog listener**: Port 514 UDP (standard SIEM port)
+- **Service type**: LoadBalancer (provides dedicated external IP)
+- **External access**: LoadBalancer external IP on port 514 UDP
 
 **Service Details:**
 - **Internal**: `wazuh-server:514` (UDP)
-- **External**: `<cluster-node-ip>:30514` (UDP)
+- **External**: `<loadbalancer-external-ip>:514` (UDP)
+- **Standard SIEM port**: Port 514 UDP for proper SIEM integration
 
 ### 2. Get Wazuh Server External IP/Address
 
 ```bash
-# Get cluster node IPs (any node can receive syslog)
-kubectl --context=nprd-apps get nodes -o wide
+# Get LoadBalancer external IP for SIEM integration
+kubectl --context=nprd-apps get svc -n managed-tools wazuh-server -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
 
-# Get NodePort service details
+# Or get full service details
 kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
+
+# Wait for LoadBalancer to be assigned (may take a few minutes)
+kubectl --context=nprd-apps wait --for=condition=loadbalancer --timeout=5m service/wazuh-server -n managed-tools
 ```
 
 **Example:**
-- Node IP: `192.168.14.110` (or any cluster node)
-- External Syslog Port: `30514` (UDP)
+- LoadBalancer External IP: `<assigned-by-loadbalancer>` (check with `kubectl get svc`)
+- External Syslog Port: `514` (UDP - standard SIEM port)
 
 ### 3. Configure UniFi Network Application
 
@@ -58,8 +62,8 @@ kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
 3. **Enable SIEM Server:**
    - In the **Activity Logging (Syslog)** section:
      - Enable **SIEM Server**
-     - **Server Address**: Enter a cluster node IP (e.g., `192.168.14.110`)
-     - **Port**: `30514` (NodePort, NOT 514)
+     - **Server Address**: Enter the LoadBalancer external IP (get with `kubectl get svc -n managed-tools wazuh-server`)
+     - **Port**: `514` (standard SIEM syslog port)
      - **Protocol**: UDP
      - **Categories**: Select log categories to forward:
        - Authentication events
@@ -82,8 +86,8 @@ kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
 3. **Enable SIEM Server:**
    - Under **SIEM Server** section:
      - Enable **SIEM Server**
-     - **Server Address**: Enter cluster node IP (e.g., `192.168.14.110`)
-     - **Port**: `30514` (NodePort)
+     - **Server Address**: Enter the LoadBalancer external IP (get with `kubectl get svc -n managed-tools wazuh-server`)
+     - **Port**: `514` (standard SIEM syslog port)
      - **Protocol**: UDP
      - Select log categories
 
@@ -169,19 +173,23 @@ kubectl --context=nprd-apps exec -n managed-tools wazuh-server-0 -- /var/ossec/b
 
 1. **Check Network Connectivity:**
    ```bash
+   # Get LoadBalancer external IP first
+   EXTERNAL_IP=$(kubectl --context=nprd-apps get svc -n managed-tools wazuh-server -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+   
    # From UniFi device network, test connectivity
-   # Replace <node-ip> with actual cluster node IP
-   nc -u -v <node-ip> 30514
+   # Replace <external-ip> with LoadBalancer external IP
+   nc -u -v <external-ip> 514
    ```
 
 2. **Check Firewall Rules:**
-   - Ensure UDP port 30514 is allowed from UniFi devices to cluster nodes
+   - Ensure UDP port 514 is allowed from UniFi devices to LoadBalancer IP
    - Check if any network policies block UDP traffic
+   - Verify LoadBalancer source ranges if configured
 
 3. **Verify Service is Exposed:**
    ```bash
    kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
-   # Should show NodePort with port 30514/UDP
+   # Should show LoadBalancer with external IP and port 514/UDP
    ```
 
 4. **Check UniFi Configuration:**
@@ -208,8 +216,11 @@ kubectl --context=nprd-apps exec -n managed-tools wazuh-server-0 -- /var/ossec/b
 
 4. **Test Syslog Reception:**
    ```bash
-   # Send test syslog message
-   echo "test unifi message" | nc -u <node-ip> 30514
+   # Get LoadBalancer external IP
+   EXTERNAL_IP=$(kubectl --context=nprd-apps get svc -n managed-tools wazuh-server -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+   
+   # Send test syslog message to standard port 514
+   echo "test unifi message" | nc -u $EXTERNAL_IP 514
    
    # Check Wazuh logs
    kubectl --context=nprd-apps logs -n managed-tools wazuh-server-0 --tail=50 | grep -i "test"
@@ -221,18 +232,17 @@ kubectl --context=nprd-apps exec -n managed-tools wazuh-server-0 -- /var/ossec/b
 
 | Port | Protocol | Purpose | Access |
 |------|----------|---------|--------|
-| 514 | UDP | Syslog (internal) | Cluster internal only |
-| 30514 | UDP | Syslog (NodePort, external) | Accessible from UniFi devices |
-| 1514 | TCP | Agent connections | Internal |
-| 1515 | UDP | Agent auth | Internal |
-| 55000 | TCP | API | Internal |
+| 514 | UDP | Syslog/SIEM (standard port) | LoadBalancer external IP |
+| 1514 | TCP | Agent connections | Cluster internal only |
+| 1515 | UDP | Agent auth | Cluster internal only |
+| 55000 | TCP | API | Cluster internal only |
 
 ### Firewall Rules:
 
 Ensure the following firewall rules allow traffic:
 
-**From UniFi Devices → Cluster Nodes:**
-- UDP port 30514 (syslog)
+**From UniFi Devices → LoadBalancer:**
+- UDP port 514 (standard SIEM syslog port)
 
 **Optional (if exposing agent ports):**
 - TCP port 1514 (agents)
