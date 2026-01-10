@@ -82,20 +82,6 @@ spec:
           runAsUser: 1000
           runAsGroup: 1000
           fsGroup: 1000
-        lifecycle:
-          postStart:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - |
-                  # Wait a moment for Dashboard to potentially write default config
-                  sleep 5
-                  # Restore our config file
-                  cp /wazuh-config-backup/data/wazuh/config/wazuh.yml /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml 2>/dev/null || true
-                  # Ensure proper permissions
-                  chmod 644 /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml 2>/dev/null || true
-                  echo "Restored wazuh.yml config"
         ports:
         - containerPort: 5601
           name: http
@@ -127,6 +113,35 @@ spec:
           mountPath: /etc/wazuh-dashboard
         - name: wazuh-config-persistent
           mountPath: /usr/share/wazuh-dashboard/data
+        - name: wazuh-config-backup
+          mountPath: /wazuh-config-backup
+          readOnly: true
+      - name: wazuh-config-watcher
+        image: busybox:latest
+        command: ['sh', '-c']
+        args:
+        - |
+          while true; do
+            sleep 10
+            # Check if config file exists and has correct content
+            if [ -f /wazuh-config/data/wazuh/config/wazuh.yml ]; then
+              # Check if it contains our correct URL
+              if ! grep -q "url: http://wazuh-server" /wazuh-config/data/wazuh/config/wazuh.yml 2>/dev/null; then
+                echo "$(date): Config file incorrect, restoring from backup..."
+                cp /wazuh-config-backup/data/wazuh/config/wazuh.yml /wazuh-config/data/wazuh/config/wazuh.yml 2>/dev/null || true
+                chmod 644 /wazuh-config/data/wazuh/config/wazuh.yml 2>/dev/null || true
+                echo "$(date): Config restored"
+              fi
+            else
+              # File doesn't exist yet, wait a bit
+              sleep 5
+            fi
+          done
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: wazuh-config-persistent
+          mountPath: /wazuh-config
         - name: wazuh-config-backup
           mountPath: /wazuh-config-backup
           readOnly: true
