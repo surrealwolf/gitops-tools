@@ -1,4 +1,4 @@
-name: Test Self-Hosted Runner
+name: Test Runner
 true:
   workflow_dispatch: null
   push:
@@ -9,7 +9,7 @@ permissions:
   actions: read
 jobs:
   test-runner:
-    runs-on: kubernetes
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -32,9 +32,9 @@ jobs:
 
         echo "Uptime: $(uptime)"
 
-        echo "Kubernetes context:"
+        echo "Docker context:"
 
-        kubectl config current-context || echo "kubectl not available"
+        docker context ls || echo "docker not available"
 
         '
     - name: Test environment
@@ -44,7 +44,7 @@ jobs:
 
         '
     - name: Success message
-      run: 'echo "✅ Self-hosted runner is working correctly!"
+      run: 'echo "✅ GitHub runner is working correctly!"
 
         echo "Runner successfully executed all test steps."
 
