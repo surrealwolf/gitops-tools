@@ -15,49 +15,75 @@ data:
   # Custom decoder file (will be copied to /var/ossec/etc/decoders/custom/)
   unifi_decoders.xml: |
     <!-- UniFi Decoders for Wazuh -->
-    <!-- Based on Reddit discussion and Wazuh documentation -->
-    <!-- UniFi logs come in various formats - we need flexible decoders -->
+    <!-- Based on UniFi SIEM Integration Documentation: https://help.ui.com/hc/en-us/articles/33349041044119 -->
+    <!-- UniFi exports logs in CEF (Common Event Format), not standard syslog -->
+    <!-- CEF Format: CEF:Version|Vendor|Product|Version|SignatureID|Name|Severity|Extension -->
     
-    <!-- Primary decoder: Matches UniFi messages with standard syslog format -->
+    <!-- Primary decoder: Matches CEF format messages from UniFi -->
+    <!-- CEF messages start with "CEF:" followed by pipe-separated fields -->
+    <decoder name="unifi-cef">
+      <prematch>^CEF:</prematch>
+      <type>syslog</type>
+    </decoder>
+
+    <!-- CEF parser: Extracts CEF header fields -->
+    <!-- Format: CEF:Version|Vendor|Product|Version|SignatureID|Name|Severity|Extension -->
+    <decoder name="unifi-cef-header">
+      <parent>unifi-cef</parent>
+      <regex offset="after_prematch">(\d+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\|(.+)$</regex>
+      <order>cef_version,vendor,product,product_version,signature_id,event_name,severity,extension</order>
+    </decoder>
+
+    <!-- CEF extension parser: Extracts key-value pairs from extension field -->
+    <!-- Extension format: key=value key2=value2 (space or pipe separated) -->
+    <decoder name="unifi-cef-extensions">
+      <parent>unifi-cef-header</parent>
+      <regex>src=([^\s|]+)</regex>
+      <order>src_ip</order>
+    </decoder>
+
+    <decoder name="unifi-cef-extensions-dst">
+      <parent>unifi-cef-extensions</parent>
+      <regex>dst=([^\s|]+)</regex>
+      <order>dst_ip</order>
+    </decoder>
+
+    <decoder name="unifi-cef-extensions-user">
+      <parent>unifi-cef-extensions-dst</parent>
+      <regex>user=([^\s|]+)</regex>
+      <order>user</order>
+    </decoder>
+
+    <decoder name="unifi-cef-extensions-category">
+      <parent>unifi-cef-extensions-user</parent>
+      <regex>category=([^\s|]+)</regex>
+      <order>category</order>
+    </decoder>
+
+    <!-- Alternative decoder: Matches Ubiquiti vendor in CEF messages -->
+    <decoder name="unifi-cef-ubiquiti">
+      <parent>unifi-cef-header</parent>
+      <regex>Ubiquiti</regex>
+      <order>vendor</order>
+    </decoder>
+
+    <!-- Fallback decoder: Catch UniFi messages with standard syslog format -->
     <!-- Matches messages containing "unifi" (case-insensitive) in hostname or message -->
-    <decoder name="unifi">
+    <!-- This handles non-CEF messages or legacy formats -->
+    <decoder name="unifi-syslog">
       <prematch>unifi</prematch>
       <type>syslog</type>
     </decoder>
 
-    <!-- Alternative: Match "Ubiquiti" or "UniFi Network" in message -->
     <decoder name="unifi-ubiquiti">
       <prematch>Ubiquiti|UniFi Network</prematch>
       <type>syslog</type>
     </decoder>
 
-    <!-- Decoder for UniFi messages with structured format -->
-    <!-- Format: |version|type|information|severity|UNIFIcategory=... UNIFIsubCategory=... -->
-    <decoder name="unifi-structured">
-      <parent>unifi</parent>
-      <regex offset="after_prematch">\|(\S+)\|(\d+)\|(.+?)\|(\d+)\|UNIFIcategory=(\S+)</regex>
-      <order>version,type,information,severity,UNIFIcategory</order>
-    </decoder>
-
-    <!-- Enhanced structured decoder with more fields -->
-    <decoder name="unifi-custom">
-      <parent>unifi-structured</parent>
-      <regex>UNIFIsubCategory=(\S+)\s+UNIFIhost=(\S+)\s+UNIFIsite=(\S+)</regex>
-      <order>UNIFIsubCategory,UNIFIhost,UNIFIsite</order>
-    </decoder>
-
-    <!-- Decoder for standard syslog format with unifi hostname -->
-    <!-- Format: timestamp hostname message (where hostname contains "unifi") -->
-    <decoder name="unifi-syslog">
-      <parent>unifi</parent>
-      <regex offset="after_prematch">(\S+):\s+(.+)$</regex>
-      <order>hostname_suffix,message</order>
-    </decoder>
-
     <!-- Fallback decoder: Catch any message with "unifi" that doesn't match above patterns -->
     <!-- This ensures all UniFi messages are at least detected, even if not fully parsed -->
     <decoder name="unifi-fallback">
-      <parent>unifi</parent>
+      <parent>unifi-syslog</parent>
       <regex offset="after_prematch">(.+)$</regex>
       <order>message</order>
     </decoder>
@@ -65,82 +91,117 @@ data:
   # Custom rules file (will be copied to /var/ossec/etc/rules/custom/)
   unifi_rules.xml: |
     <!-- UniFi Rules for Wazuh -->
-    <!-- Based on Reddit discussion - flexible rules to catch all UniFi events -->
+    <!-- Based on UniFi SIEM Integration Documentation: https://help.ui.com/hc/en-us/articles/33349041044119 -->
+    <!-- UniFi exports logs in CEF (Common Event Format) -->
     <!-- Rule group for UniFi events -->
     <group name="unifi,">
-      <!-- Base rule: Catch all UniFi messages (low level) -->
-      <!-- This ensures all UniFi messages appear in logs, even if they don't match specific patterns -->
+      <!-- Base rule: Catch all CEF format UniFi messages -->
       <rule id="100001" level="3">
-        <decoded_as>unifi</decoded_as>
-        <description>UniFi event detected: $message</description>
+        <decoded_as>unifi-cef</decoded_as>
+        <description>UniFi CEF event detected: $event_name from $product (severity: $severity)</description>
       </rule>
 
-      <!-- Rule for Ubiquiti/UniFi Network branded messages -->
-      <rule id="100000" level="3">
-        <decoded_as>unifi-ubiquiti</decoded_as>
-        <description>UniFi/Ubiquiti event: $message</description>
-      </rule>
-
-      <!-- Structured format messages -->
-      <rule id="100002" level="5">
-        <decoded_as>unifi-structured</decoded_as>
+      <!-- Rule for Ubiquiti vendor in CEF messages -->
+      <rule id="100010" level="3">
+        <decoded_as>unifi-cef-ubiquiti</decoded_as>
         <if_sid>100001</if_sid>
-        <description>UniFi structured event: type=$type, severity=$severity, category=$UNIFIcategory</description>
+        <description>UniFi CEF event from Ubiquiti: $event_name (severity: $severity)</description>
       </rule>
 
-      <!-- Authentication events -->
-      <rule id="100003" level="5">
-        <decoded_as>unifi-custom</decoded_as>
-        <if_sid>100002</if_sid>
-        <match>auth</match>
-        <description>UniFi authentication event: $UNIFIsubCategory from $UNIFIhost at $UNIFIsite</description>
+      <!-- Authentication events (CEF) -->
+      <rule id="100011" level="5">
+        <decoded_as>unifi-cef-header</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>auth|login|logout|authentication</match>
+        <description>UniFi authentication event: $event_name from $src_ip user=$user (severity: $severity)</description>
       </rule>
 
-      <!-- Security events -->
-      <rule id="100004" level="10">
-        <decoded_as>unifi-custom</decoded_as>
-        <if_sid>100002</if_sid>
-        <match>security</match>
-        <description>UniFi security event: $UNIFIsubCategory on $UNIFIhost at $UNIFIsite</description>
+      <!-- User login events -->
+      <rule id="100012" level="5">
+        <decoded_as>unifi-cef-extensions-user</decoded_as>
+        <if_sid>100011</if_sid>
+        <match>login|Login|User Login</match>
+        <description>UniFi user login: $user from $src_ip</description>
+      </rule>
+
+      <!-- User logout events -->
+      <rule id="100013" level="4">
+        <decoded_as>unifi-cef-extensions-user</decoded_as>
+        <if_sid>100011</if_sid>
+        <match>logout|Logout|User Logout</match>
+        <description>UniFi user logout: $user from $src_ip</description>
+      </rule>
+
+      <!-- Security events (CEF) -->
+      <rule id="100014" level="10">
+        <decoded_as>unifi-cef-header</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>security|Security|intrusion|attack|denied|blocked|failed</match>
+        <description>UniFi security event: $event_name from $src_ip (severity: $severity)</description>
       </rule>
 
       <!-- High-severity security alerts -->
-      <rule id="100005" level="12">
-        <decoded_as>unifi-custom</decoded_as>
-        <if_sid>100004</if_sid>
-        <match>failed|denied|blocked|intrusion|attack</match>
-        <description>UniFi security alert: $UNIFIsubCategory on $UNIFIhost - $message</description>
+      <rule id="100015" level="12">
+        <decoded_as>unifi-cef-extensions</decoded_as>
+        <if_sid>100014</if_sid>
+        <match>failed|denied|blocked|intrusion|attack|breach</match>
+        <description>UniFi security alert: $event_name from $src_ip to $dst_ip (severity: $severity) - $extension</description>
       </rule>
 
-      <!-- Wireless events -->
-      <rule id="100006" level="5">
-        <decoded_as>unifi-custom</decoded_as>
-        <if_sid>100002</if_sid>
-        <match>wireless</match>
-        <description>UniFi wireless event: $UNIFIsubCategory on $UNIFIhost</description>
+      <!-- Wireless events (CEF) -->
+      <rule id="100016" level="5">
+        <decoded_as>unifi-cef-header</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>wireless|WiFi|WLAN|SSID|client.*connect|client.*disconnect</match>
+        <description>UniFi wireless event: $event_name (severity: $severity)</description>
       </rule>
 
-      <!-- System events -->
-      <rule id="100007" level="4">
-        <decoded_as>unifi-custom</decoded_as>
-        <if_sid>100002</if_sid>
-        <match>system</match>
-        <description>UniFi system event: $UNIFIsubCategory on $UNIFIhost</description>
+      <!-- Network events (CEF) -->
+      <rule id="100017" level="5">
+        <decoded_as>unifi-cef-header</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>network|Network|DHCP|DNS|route|connection</match>
+        <description>UniFi network event: $event_name from $src_ip (severity: $severity)</description>
       </rule>
 
-      <!-- Network events -->
-      <rule id="100008" level="5">
-        <decoded_as>unifi-custom</decoded_as>
-        <if_sid>100002</if_sid>
-        <match>network</match>
-        <description>UniFi network event: $UNIFIsubCategory on $UNIFIhost</description>
+      <!-- System events (CEF) -->
+      <rule id="100018" level="4">
+        <decoded_as>unifi-cef-header</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>system|System|reboot|startup|shutdown|update|firmware</match>
+        <description>UniFi system event: $event_name (severity: $severity)</description>
+      </rule>
+
+      <!-- Category-based rules (CEF extension) -->
+      <rule id="100019" level="5">
+        <decoded_as>unifi-cef-extensions-category</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>category=auth|category=authentication</match>
+        <description>UniFi category: authentication - $event_name from $src_ip</description>
+      </rule>
+
+      <rule id="100020" level="10">
+        <decoded_as>unifi-cef-extensions-category</decoded_as>
+        <if_sid>100001</if_sid>
+        <match>category=security|category=Security</match>
+        <description>UniFi category: security - $event_name from $src_ip</description>
+      </rule>
+
+      <!-- Fallback: Standard syslog format messages (legacy or non-CEF) -->
+      <rule id="100021" level="3">
+        <decoded_as>unifi-syslog</decoded_as>
+        <description>UniFi syslog event (non-CEF): $message</description>
+      </rule>
+
+      <rule id="100022" level="3">
+        <decoded_as>unifi-ubiquiti</decoded_as>
+        <description>UniFi/Ubiquiti event (non-CEF): $message</description>
       </rule>
 
       <!-- Fallback: Catch any UniFi message that doesn't match above patterns -->
-      <!-- This ensures visibility of all UniFi messages -->
-      <rule id="100009" level="3">
+      <rule id="100023" level="3">
         <decoded_as>unifi-fallback</decoded_as>
-        <if_sid>100001</if_sid>
+        <if_sid>100021</if_sid>
         <description>UniFi message (unstructured): $message</description>
       </rule>
     </group>
