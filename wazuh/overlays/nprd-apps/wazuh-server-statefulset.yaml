@@ -87,12 +87,53 @@ spec:
               # Check if syslog remote already exists - if so, remove it first (we'll re-add with updated config)
               if '<connection>syslog</connection>' in content:
                   print("⚠️  Syslog remote configuration already exists, updating...")
-                  # Remove existing syslog remote block (from <remote> with syslog to </remote>)
+                  # Remove existing syslog remote block using line-by-line approach
+                  # This is more reliable than regex for handling comments and multi-line blocks
                   import re
-                  # Pattern matches from <remote> with syslog connection to closing </remote>
-                  pattern = r'<remote>\s*<connection>syslog</connection>.*?</remote>'
-                  content = re.sub(pattern, '', content, flags=re.DOTALL)
-                  print("✅ Removed existing syslog remote block, will add updated version")
+                  lines = content.split('\n')
+                  new_lines = []
+                  skip_until_close = False
+                  in_syslog_block = False
+                  comment_context = []
+                  
+                  for i, line in enumerate(lines):
+                      # Check if we're entering a syslog remote block
+                      if '<connection>syslog</connection>' in line:
+                          in_syslog_block = True
+                          # Don't add this line - we're removing the whole block
+                          # Capture preceding comment lines if any
+                          # Look backwards for comment lines related to syslog
+                          j = i - 1
+                          while j >= 0 and (lines[j].strip().startswith('<!--') or not lines[j].strip()):
+                              if 'syslog' in lines[j].lower():
+                                  comment_context.insert(0, j)
+                              j -= 1
+                          continue
+                      
+                      # If we're in a syslog block, skip lines until we find closing </remote>
+                      if in_syslog_block:
+                          if '</remote>' in line:
+                              in_syslog_block = False
+                              skip_until_close = False
+                              # Also remove any comment lines we captured
+                              for comment_idx in reversed(comment_context):
+                                  # Remove comment line if it's still in new_lines
+                                  if comment_idx < len(new_lines):
+                                      if comment_idx < len(new_lines) and 'syslog' in new_lines[comment_idx].lower():
+                                          new_lines.pop(comment_idx)
+                              comment_context = []
+                              continue
+                          else:
+                              # Still in block, skip this line
+                              continue
+                      
+                      # Not in syslog block, keep the line
+                      new_lines.append(line)
+                  
+                  content = '\n'.join(new_lines)
+                  # Clean up extra blank lines
+                  content = re.sub(r'\n{3,}', '\n\n', content)
+                  print("✅ Removed existing syslog remote block (including preceding comments), will add updated version")
               
               # Read syslog fragment
               with open(syslog_fragment, 'r') as f:
@@ -168,9 +209,35 @@ spec:
                 echo "✅ Copied unifi_rules.xml"
               fi
               
+              echo "=== Step 4: Enabling debug logging for remoted ==="
+              # Enable debug logging to see if messages are received
+              local_internal_options="/tmp/ossec-etc/local_internal_options.conf"
+              if [ -f "$local_internal_options" ]; then
+                # Add debug logging if not already present
+                if ! grep -q "wazuh_remoted.debug=2" "$local_internal_options"; then
+                  echo "" >> "$local_internal_options"
+                  echo "# Debug logging for remoted (to see received syslog messages)" >> "$local_internal_options"
+                  echo "wazuh_remoted.debug=2" >> "$local_internal_options"
+                  echo "✅ Enabled debug logging for remoted"
+                else
+                  echo "⚠️  Debug logging already enabled"
+                fi
+              else
+                echo "⚠️  local_internal_options.conf not found, creating it..."
+                cat > "$local_internal_options" << 'EOF'
+# local_internal_options.conf
+# Debug logging for remoted (to see received syslog messages)
+wazuh_remoted.debug=2
+EOF
+                chmod 640 "$local_internal_options"
+                chown root:wazuh "$local_internal_options"
+                echo "✅ Created local_internal_options.conf with debug logging"
+              fi
+              
               echo "=== Configuration complete! ==="
               echo "✅ Syslog remote configured"
               echo "✅ UniFi decoders and rules deployed"
+              echo "✅ Debug logging enabled for remoted"
           volumeMounts:
             - name: syslog-config
               mountPath: /tmp/syslog-config
@@ -199,7 +266,7 @@ spec:
           - containerPort: 1515
             name: agent-udp
             protocol: UDP
-          - containerPort: 5140
+          - containerPort: 514
             name: syslog-udp
             protocol: UDP
           - containerPort: 55000

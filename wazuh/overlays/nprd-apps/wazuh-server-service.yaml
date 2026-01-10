@@ -31,13 +31,16 @@ spec:
     targetPort: 1515
     protocol: UDP
   - name: syslog-udp
-    port: 5140
-    targetPort: 5140
+    port: 514
+    targetPort: 514
     protocol: UDP
     nodePort: 30514
-    # NodePort 30514 maps to internal port 5140 UDP (non-privileged)
-    # Using port 5140 instead of 514 to avoid CAP_NET_BIND_SERVICE requirement
+    # NodePort 30514 maps to internal port 514 UDP (standard syslog port)
+    # Container has CAP_NET_BIND_SERVICE to bind to privileged port 514
     # Use any cluster node IP:30514 for SIEM integration
+    # References:
+    # - https://documentation.wazuh.com/current/user-manual/capabilities/log-data-collection/syslog.html
+    # - https://github.com/wazuh/wazuh-kubernetes/issues/345
   - name: api
     port: 55000
     targetPort: 55000
