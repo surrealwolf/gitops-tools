@@ -11,7 +11,7 @@ set -e
 SOURCE_NAMESPACE="${SOURCE_NAMESPACE:-managed-tools}"
 SOURCE_SECRET="${SOURCE_SECRET:-wildcard-dataknife-net-tls}"
 TARGET_NAMESPACE="${TARGET_NAMESPACE:-managed-cicd}"
-TARGET_SECRET="${TARGET_SECRET:-wildcard-dataknife-net-tls}"
+TARGET_SECRET="${TARGET_SECRET:-harbor-ca-cert}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -27,7 +27,7 @@ echo "Configuration:"
 echo "  Source Namespace: ${SOURCE_NAMESPACE}"
 echo "  Source Secret: ${SOURCE_SECRET}"
 echo "  Target Namespace: ${TARGET_NAMESPACE}"
-echo "  Target Secret: ${TARGET_SECRET}"
+echo "  Target Secret: harbor-ca-cert (CA certificate only, no private key)"
 echo ""
 
 # Check if kubectl is available
@@ -51,16 +51,18 @@ if ! kubectl get namespace "${TARGET_NAMESPACE}" > /dev/null 2>&1; then
     echo -e "${GREEN}✓ Namespace created${NC}"
 fi
 
-# Copy the entire secret to target namespace
-echo "Copying secret '${SOURCE_SECRET}' from ${SOURCE_NAMESPACE} to ${TARGET_NAMESPACE} namespace..."
-kubectl get secret "${SOURCE_SECRET}" -n "${SOURCE_NAMESPACE}" -o yaml | \
-  sed "s/namespace: ${SOURCE_NAMESPACE}/namespace: ${TARGET_NAMESPACE}/" | \
-  sed "/resourceVersion:/d" | \
-  sed "/uid:/d" | \
+# Extract CA certificate and create a secret with only ca.crt (no private key)
+# This prevents Docker from looking for client certificates
+echo "Extracting CA certificate and creating harbor-ca-cert secret in ${TARGET_NAMESPACE} namespace..."
+kubectl get secret "${SOURCE_SECRET}" -n "${SOURCE_NAMESPACE}" -o jsonpath='{.data.tls\.crt}' | base64 -d | \
+  kubectl create secret generic harbor-ca-cert \
+  --from-literal=ca.crt=/dev/stdin \
+  -n "${TARGET_NAMESPACE}" \
+  --dry-run=client -o yaml | \
   kubectl apply -f -
 
-if kubectl get secret "${TARGET_SECRET}" -n "${TARGET_NAMESPACE}" > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Secret '${TARGET_SECRET}' created/updated in namespace '${TARGET_NAMESPACE}'${NC}"
+if kubectl get secret harbor-ca-cert -n "${TARGET_NAMESPACE}" > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ Secret 'harbor-ca-cert' created/updated in namespace '${TARGET_NAMESPACE}'${NC}"
 else
     echo -e "${RED}Error: Failed to create secret${NC}"
     exit 1
