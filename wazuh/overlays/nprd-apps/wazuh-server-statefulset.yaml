@@ -31,6 +31,122 @@ spec:
           secret:
             secretName: wazuh-certs
             defaultMode: 0600
+        - name: syslog-config
+          configMap:
+            name: wazuh-server-syslog-config
+            defaultMode: 0755
+        - name: unifi-decoder-config
+          configMap:
+            name: wazuh-unifi-decoder-config
+            defaultMode: 0755
+      initContainers:
+        # InitContainer 1: Copy default config files and inject syslog configuration
+        - name: configure-ossec
+          image: wazuh/wazuh-manager:4.14.1
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -e
+              echo "=== Step 1: Copying default /var/ossec/etc files to emptyDir ==="
+              # Ensure target directory exists
+              mkdir -p /tmp/ossec-etc
+              # Copy entire /var/ossec/etc directory structure (default from image)
+              if [ -d "/var/ossec/etc" ]; then
+                cp -a /var/ossec/etc/* /tmp/ossec-etc/ 2>/dev/null || true
+                # Copy hidden files (but not . and ..)
+                for file in /var/ossec/etc/.[^.]*; do
+                  [ -e "$file" ] && cp -a "$file" /tmp/ossec-etc/ 2>/dev/null || true
+                done
+                echo "✅ Copied default /var/ossec/etc files"
+              else
+                echo "⚠️  /var/ossec/etc not found, using empty structure"
+              fi
+              
+              # Ensure custom directories exist
+              mkdir -p /tmp/ossec-etc/decoders/custom
+              mkdir -p /tmp/ossec-etc/rules/custom
+              echo "✅ Created custom decoder and rules directories"
+              
+              echo "=== Step 2: Injecting syslog remote configuration ==="
+              # Use Python to inject syslog remote block into ossec.conf
+              python3 << 'PYTHON_SCRIPT'
+              import xml.etree.ElementTree as ET
+              import sys
+              import re
+              
+              ossec_conf = "/tmp/ossec-etc/ossec.conf"
+              syslog_fragment = "/tmp/syslog-config/syslog-remote.xml"
+              
+              # Read the default ossec.conf
+              with open(ossec_conf, 'r') as f:
+                  content = f.read()
+              
+              # Check if syslog remote already exists
+              if '<connection>syslog</connection>' in content:
+                  print("✅ Syslog remote configuration already exists, skipping...")
+                  sys.exit(0)
+              
+              # Read syslog fragment
+              with open(syslog_fragment, 'r') as f:
+                  syslog_xml = f.read().strip()
+              
+              # Find the closing </ossec_config> tag and insert before it
+              # Preserve indentation
+              match = re.search(r'(\s+)</ossec_config>', content)
+              if match:
+                  indent = match.group(1)
+                  # Indent each line of syslog fragment
+                  indented_syslog = '\n' + '\n'.join([indent + line if line.strip() else line 
+                                                     for line in syslog_xml.split('\n')])
+                  new_content = re.sub(r'(</ossec_config>)', indented_syslog + r'\n\1', content, count=1)
+              else:
+                  # Fallback: insert before </ossec_config>
+                  new_content = content.replace('</ossec_config>', syslog_xml + '\n</ossec_config>')
+              
+              # Write back
+              with open(ossec_conf, 'w') as f:
+                  f.write(new_content)
+              
+              # Validate XML
+              try:
+                  ET.parse(ossec_conf)
+                  print("✅ Successfully injected syslog remote configuration (XML validated)")
+              except ET.ParseError as e:
+                  print(f"❌ XML Error: {e}")
+                  sys.exit(1)
+              PYTHON_SCRIPT
+              
+              echo "=== Step 3: Copying UniFi decoders and rules ==="
+              # Copy UniFi decoder file
+              if [ -f "/tmp/unifi-config/unifi_decoders.xml" ]; then
+                cp /tmp/unifi-config/unifi_decoders.xml /tmp/ossec-etc/decoders/custom/unifi_decoders.xml
+                chmod 640 /tmp/ossec-etc/decoders/custom/unifi_decoders.xml
+                chown root:wazuh /tmp/ossec-etc/decoders/custom/unifi_decoders.xml
+                echo "✅ Copied unifi_decoders.xml"
+              fi
+              
+              # Copy UniFi rules file
+              if [ -f "/tmp/unifi-config/unifi_rules.xml" ]; then
+                cp /tmp/unifi-config/unifi_rules.xml /tmp/ossec-etc/rules/custom/unifi_rules.xml
+                chmod 640 /tmp/ossec-etc/rules/custom/unifi_rules.xml
+                chown root:wazuh /tmp/ossec-etc/rules/custom/unifi_rules.xml
+                echo "✅ Copied unifi_rules.xml"
+              fi
+              
+              echo "=== Configuration complete! ==="
+              echo "✅ Syslog remote configured"
+              echo "✅ UniFi decoders and rules deployed"
+          volumeMounts:
+            - name: syslog-config
+              mountPath: /tmp/syslog-config
+              readOnly: true
+            - name: unifi-decoder-config
+              mountPath: /tmp/unifi-config
+              readOnly: true
+            - name: ossec-etc
+              mountPath: /tmp/ossec-etc
+          securityContext:
+            runAsUser: 0  # Root needed to write files and set ownership
       containers:
       - name: wazuh-server
         image: wazuh/wazuh-manager:4.14.1
@@ -57,6 +173,8 @@ spec:
         volumeMounts:
           - name: logs
             mountPath: /var/ossec/logs
+          - name: ossec-etc
+            mountPath: /var/ossec/etc
           - name: filebeat-config
             mountPath: /etc/filebeat/filebeat.yml
             subPath: filebeat.yml
@@ -65,6 +183,10 @@ spec:
             mountPath: /etc/filebeat/certs/root-ca.pem
             subPath: root-ca.pem
             readOnly: true
+      volumes:
+        # EmptyDir volume for /var/ossec/etc (initContainer copies default files here and modifies them)
+        - name: ossec-etc
+          emptyDir: {}
   volumeClaimTemplates:
   - metadata:
       name: logs

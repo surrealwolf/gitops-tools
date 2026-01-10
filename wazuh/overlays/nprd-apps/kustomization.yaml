@@ -14,10 +14,11 @@ resources:
   # - wazuh-server-configmap.yaml  # Using default ossec.conf from container
   - wazuh-server-secret.yaml
   - wazuh-server-filebeat-configmap.yaml
+  - wazuh-server-syslog-configmap.yaml  # Syslog remote configuration (injected via initContainer)
   - wazuh-server-statefulset.yaml
   - wazuh-server-service.yaml
   # Optional: UniFi decoders and rules (uncomment to enable)
-  # - wazuh-unifi-decoder-configmap.yaml
+  - wazuh-unifi-decoder-configmap.yaml
   
   # Wazuh Dashboard components
   - wazuh-dashboard-configmap.yaml

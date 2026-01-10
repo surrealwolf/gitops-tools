@@ -1,6 +1,7 @@
-# Wazuh UniFi Decoder ConfigMap
-# Optional: Custom decoders and rules for UniFi device logs
-# Mount this to /var/ossec/etc/decoders/custom/ or /var/ossec/etc/rules/custom/
+# Wazuh UniFi Decoder and Rules ConfigMap
+# Custom decoders and rules for UniFi device logs
+# These files will be copied to /var/ossec/etc/decoders/ and /var/ossec/etc/rules/
+# by the initContainer, where Wazuh will auto-load them
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -11,6 +12,7 @@ metadata:
     component: server
     managed-by: gitops
 data:
+  # Custom decoder file (will be copied to /var/ossec/etc/decoders/custom/)
   unifi_decoders.xml: |
     <!-- UniFi Decoders for Wazuh -->
     <!-- Decoder for UniFi log format -->
@@ -32,6 +34,7 @@ data:
       <order>timestamp,hostname,message</order>
     </decoder>
 
+  # Custom rules file (will be copied to /var/ossec/etc/rules/custom/)
   unifi_rules.xml: |
     <!-- UniFi Rules for Wazuh -->
     <!-- Rule group for UniFi events -->
@@ -69,3 +72,38 @@ data:
         <description>UniFi wireless event: $UNIFIsubCategory on $UNIFIhost</description>
       </rule>
     </group>
+  
+  # Script to copy decoders and rules to appropriate directories
+  copy-custom-files.sh: |
+    #!/bin/bash
+    set -e
+    
+    echo "Copying UniFi decoders and rules to Wazuh directories..."
+    
+    DECODER_DIR="/var/ossec/etc/decoders/custom"
+    RULES_DIR="/var/ossec/etc/rules/custom"
+    
+    # Create directories if they don't exist
+    mkdir -p "$DECODER_DIR" "$RULES_DIR"
+    
+    # Copy decoder file
+    if [ -f "/tmp/unifi_decoders.xml" ]; then
+      cp /tmp/unifi_decoders.xml "$DECODER_DIR/unifi_decoders.xml"
+      chmod 640 "$DECODER_DIR/unifi_decoders.xml"
+      chown root:wazuh "$DECODER_DIR/unifi_decoders.xml"
+      echo "✅ Copied unifi_decoders.xml to $DECODER_DIR"
+    else
+      echo "⚠️  unifi_decoders.xml not found, skipping..."
+    fi
+    
+    # Copy rules file
+    if [ -f "/tmp/unifi_rules.xml" ]; then
+      cp /tmp/unifi_rules.xml "$RULES_DIR/unifi_rules.xml"
+      chmod 640 "$RULES_DIR/unifi_rules.xml"
+      chown root:wazuh "$RULES_DIR/unifi_rules.xml"
+      echo "✅ Copied unifi_rules.xml to $RULES_DIR"
+    else
+      echo "⚠️  unifi_rules.xml not found, skipping..."
+    fi
+    
+    echo "Custom decoders and rules deployed successfully!"
