@@ -30,6 +30,8 @@ secrets/**/*.secret.yaml
 *.crt
 *.csr
 certs/
+# Wazuh password file
+wazuh-passwords.txt
 # Local environment files
 .env
 .env.local

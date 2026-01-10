@@ -103,8 +103,36 @@ INDEXER_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
 SERVER_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
 DASHBOARD_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-25)
 
+# Save passwords to file
+PASSWORDS_FILE="${CERT_DIR}/../wazuh-passwords.txt"
+cat > "${PASSWORDS_FILE}" <<EOF
+# Wazuh Credentials
+# Generated: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+# 
+# ⚠️  IMPORTANT: Keep this file secure and do NOT commit it to Git
+# This file contains sensitive credentials for Wazuh components
+#
+# These passwords are also stored in Kubernetes secret 'wazuh-credentials'
+# in namespace '${NAMESPACE}'
+
+Indexer Admin Password: ${INDEXER_PASSWORD}
+Server Password:        ${SERVER_PASSWORD}
+Dashboard Password:     ${DASHBOARD_PASSWORD}
+
+# Default demo credentials (from internal_users.yml):
+# These are the default demo passwords used in the Wazuh Indexer configuration
+# admin: admin (password: admin)
+# kibanaserver: kibanaserver (password: kibanaserver)
+# kibanaro: kibanaro (password: kibanaro)
+# readall: readall (password: readall)
+EOF
+
+# Set restrictive permissions on password file
+chmod 600 "${PASSWORDS_FILE}"
+
 echo ""
-echo "⚠️  IMPORTANT: Save these passwords securely!"
+echo "⚠️  IMPORTANT: Passwords saved to ${PASSWORDS_FILE}"
+echo "   File permissions set to 600 (read/write owner only)"
 echo ""
 echo "Indexer Admin Password: ${INDEXER_PASSWORD}"
 echo "Server Password:        ${SERVER_PASSWORD}"
@@ -123,16 +151,19 @@ echo ""
 echo "✓ Kubernetes secret 'wazuh-credentials' created/updated in namespace '${NAMESPACE}'"
 echo ""
 echo "Certificate files saved to: ${CERT_DIR}"
+echo "Passwords saved to: ${PASSWORDS_FILE}"
 echo ""
 echo "Next steps:"
 echo "1. Review the certificate files in ${CERT_DIR}"
-echo "2. Ensure the secrets are created:"
+echo "2. Review passwords in ${PASSWORDS_FILE}"
+echo "3. Ensure the secrets are created:"
 echo "   kubectl get secrets -n ${NAMESPACE} | grep wazuh"
-echo "3. Deploy Wazuh using Fleet GitOps"
+echo "4. Deploy Wazuh using Fleet GitOps"
 echo ""
 echo "⚠️  SECURITY NOTE:"
 echo "   - Certificate files in ${CERT_DIR} contain sensitive data"
+echo "   - Password file ${PASSWORDS_FILE} contains sensitive credentials"
 echo "   - Do NOT commit these files to Git"
-echo "   - The ${CERT_DIR} directory should be in .gitignore"
+echo "   - The ${CERT_DIR} directory and wazuh-passwords.txt should be in .gitignore"
 echo "   - Passwords are stored in Kubernetes secrets (consider using Sealed Secrets for GitOps)"
 echo ""
