@@ -14,9 +14,10 @@ UniFi devices (switches, access points, gateways, etc.) can send syslog messages
 ## Prerequisites
 
 - Wazuh Server deployed and running
-- Wazuh Server exposed externally (NodePort or LoadBalancer) on port 514 UDP
+- Wazuh Server exposed externally via NodePort on port 30514 UDP (maps to internal 514 UDP)
 - UniFi Network Application (Controller) access
 - Network connectivity between UniFi devices and Wazuh Server
+- (Optional) DNS configured for hostname access - see [UNIFI_DNS_SETUP.md](./UNIFI_DNS_SETUP.md)
 
 ## Configuration Steps
 
@@ -47,11 +48,13 @@ kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
 ```
 
 **Example Node IPs:**
-- `192.168.14.110` (or any other cluster node)
-- **External Syslog**: `<node-ip>:30514` (UDP)
+- `192.168.14.110`, `192.168.14.111`, `192.168.14.112` (first 3 nodes)
+- **External Syslog**: `<node-ip>:30514` (UDP) OR use hostname `wazuh-syslog.dataknife.net:30514`
 - NodePort `30514` maps to internal port `514` UDP
 
-**Important**: Use **any cluster node IP** with port **30514** (UDP). All nodes can receive syslog traffic.
+**Important**: 
+- Use **any cluster node IP** with port **30514** (UDP). All nodes can receive syslog traffic.
+- **Recommended**: Use hostname with multiple A records (round-robin DNS) for redundancy - see [UNIFI_DNS_SETUP.md](./UNIFI_DNS_SETUP.md)
 
 ### 3. Configure UniFi Network Application
 
@@ -66,8 +69,11 @@ kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
 3. **Enable SIEM Server:**
    - In the **Activity Logging (Syslog)** section:
      - Enable **SIEM Server**
-     - **Server Address**: Enter any cluster node IP (e.g., `192.168.14.110`)
-       - Get with: `kubectl --context=nprd-apps get nodes -o wide`
+     - **Server Address**: 
+       - **Option 1 (Recommended)**: Use hostname `wazuh-syslog.dataknife.net` (with DNS round-robin)
+       - **Option 2**: Use any cluster node IP (e.g., `192.168.14.110`)
+       - Get IPs with: `kubectl --context=nprd-apps get nodes -o wide`
+       - For DNS setup, see [UNIFI_DNS_SETUP.md](./UNIFI_DNS_SETUP.md)
      - **Port**: `30514` (NodePort, NOT 514 - maps to internal port 514)
      - **Protocol**: UDP
      - **Categories**: Select log categories to forward:
@@ -91,8 +97,11 @@ kubectl --context=nprd-apps get svc -n managed-tools wazuh-server
 3. **Enable SIEM Server:**
    - Under **SIEM Server** section:
      - Enable **SIEM Server**
-     - **Server Address**: Enter any cluster node IP (e.g., `192.168.14.110`)
-       - Get with: `kubectl --context=nprd-apps get nodes -o wide`
+     - **Server Address**: 
+       - **Option 1 (Recommended)**: Use hostname `wazuh-syslog.dataknife.net` (with DNS round-robin)
+       - **Option 2**: Use any cluster node IP (e.g., `192.168.14.110`)
+       - Get IPs with: `kubectl --context=nprd-apps get nodes -o wide`
+       - For DNS setup, see [UNIFI_DNS_SETUP.md](./UNIFI_DNS_SETUP.md)
      - **Port**: `30514` (NodePort, NOT 514 - maps to internal port 514)
      - **Protocol**: UDP
      - Select log categories
