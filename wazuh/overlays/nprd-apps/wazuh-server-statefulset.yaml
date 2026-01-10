@@ -87,53 +87,54 @@ spec:
               # Check if syslog remote already exists - if so, remove it first (we'll re-add with updated config)
               if '<connection>syslog</connection>' in content:
                   print("⚠️  Syslog remote configuration already exists, updating...")
-                  # Remove existing syslog remote block using line-by-line approach
-                  # This is more reliable than regex for handling comments and multi-line blocks
+                  # Remove existing syslog remote block using simple line-by-line approach
+                  # Find lines with syslog connection, then remove from opening <remote> to closing </remote>
                   import re
                   lines = content.split('\n')
                   new_lines = []
-                  skip_until_close = False
-                  in_syslog_block = False
-                  comment_context = []
+                  i = 0
                   
-                  for i, line in enumerate(lines):
-                      # Check if we're entering a syslog remote block
+                  while i < len(lines):
+                      line = lines[i]
+                      
+                      # Check if this line contains syslog connection
                       if '<connection>syslog</connection>' in line:
-                          in_syslog_block = True
-                          # Don't add this line - we're removing the whole block
-                          # Capture preceding comment lines if any
-                          # Look backwards for comment lines related to syslog
-                          j = i - 1
-                          while j >= 0 and (lines[j].strip().startswith('<!--') or not lines[j].strip()):
-                              if 'syslog' in lines[j].lower():
-                                  comment_context.insert(0, j)
-                              j -= 1
+                          # Found syslog block - need to remove it
+                          # First, go backwards to find opening <remote> (may have comments before)
+                          start_idx = i
+                          while start_idx > 0:
+                              prev_line = lines[start_idx - 1].strip()
+                              # Check if previous line is a comment related to syslog or empty
+                              if prev_line.startswith('<!--') and ('syslog' in prev_line.lower() or 'unifi' in prev_line.lower() or '514' in prev_line):
+                                  start_idx -= 1
+                                  continue
+                              # Check if previous line is the opening <remote> tag
+                              if prev_line == '<remote>' or prev_line.startswith('<remote>'):
+                                  start_idx -= 1
+                                  break
+                              # If we hit a non-comment, non-remote line, stop going backwards
+                              if prev_line and not prev_line.startswith('<!--'):
+                                  break
+                              start_idx -= 1
+                          
+                          # Now skip forward to find closing </remote>
+                          end_idx = i
+                          while end_idx < len(lines) and '</remote>' not in lines[end_idx]:
+                              end_idx += 1
+                          
+                          # Skip all lines from start_idx to end_idx (inclusive)
+                          print(f"✅ Removing syslog block (lines {start_idx+1}-{end_idx+1})")
+                          i = end_idx + 1
                           continue
                       
-                      # If we're in a syslog block, skip lines until we find closing </remote>
-                      if in_syslog_block:
-                          if '</remote>' in line:
-                              in_syslog_block = False
-                              skip_until_close = False
-                              # Also remove any comment lines we captured
-                              for comment_idx in reversed(comment_context):
-                                  # Remove comment line if it's still in new_lines
-                                  if comment_idx < len(new_lines):
-                                      if comment_idx < len(new_lines) and 'syslog' in new_lines[comment_idx].lower():
-                                          new_lines.pop(comment_idx)
-                              comment_context = []
-                              continue
-                          else:
-                              # Still in block, skip this line
-                              continue
-                      
-                      # Not in syslog block, keep the line
+                      # Not part of syslog block, keep the line
                       new_lines.append(line)
+                      i += 1
                   
                   content = '\n'.join(new_lines)
                   # Clean up extra blank lines
                   content = re.sub(r'\n{3,}', '\n\n', content)
-                  print("✅ Removed existing syslog remote block (including preceding comments), will add updated version")
+                  print("✅ Removed existing syslog remote block, will add updated version")
               
               # Read syslog fragment
               with open(syslog_fragment, 'r') as f:
