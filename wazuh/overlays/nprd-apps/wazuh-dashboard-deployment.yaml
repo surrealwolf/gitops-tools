@@ -121,21 +121,28 @@ spec:
         command: ['sh', '-c']
         args:
         - |
+          echo "Starting wazuh-config watcher..."
+          # Wait for Dashboard to create the directory structure
+          sleep 20
           while true; do
-            sleep 10
-            # Check if config file exists and has correct content
+            # Check if config file exists
             if [ -f /wazuh-config/data/wazuh/config/wazuh.yml ]; then
               # Check if it contains our correct URL
               if ! grep -q "url: http://wazuh-server" /wazuh-config/data/wazuh/config/wazuh.yml 2>/dev/null; then
-                echo "$(date): Config file incorrect, restoring from backup..."
-                cp /wazuh-config-backup/data/wazuh/config/wazuh.yml /wazuh-config/data/wazuh/config/wazuh.yml 2>/dev/null || true
-                chmod 644 /wazuh-config/data/wazuh/config/wazuh.yml 2>/dev/null || true
-                echo "$(date): Config restored"
+                echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Config incorrect, restoring..."
+                cp /wazuh-config-backup/data/wazuh/config/wazuh.yml /wazuh-config/data/wazuh/config/wazuh.yml
+                chmod 644 /wazuh-config/data/wazuh/config/wazuh.yml
+                chown 1000:1000 /wazuh-config/data/wazuh/config/wazuh.yml
+                echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Config restored successfully"
+                # Verify it was restored
+                grep "url: http://wazuh-server" /wazuh-config/data/wazuh/config/wazuh.yml && echo "Verified: Config correct" || echo "ERROR: Config restoration failed"
+              else
+                echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Config is correct"
               fi
             else
-              # File doesn't exist yet, wait a bit
-              sleep 5
+              echo "[$(date +%Y-%m-%d\ %H:%M:%S)] Config file not found yet, waiting..."
             fi
+            sleep 15
           done
         securityContext:
           runAsUser: 0
