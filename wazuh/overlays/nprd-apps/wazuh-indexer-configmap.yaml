@@ -57,11 +57,11 @@ data:
     ## Demo users
     
     admin:
-      hash: "$2y$12$K/SpwjtB.wOHJ/Nc6GVRDuc1h0rM1DfvziFRNPtk27P.c4yDr9njO"
+      hash: "$2y$12$OZEuY7e6ZH8W3bVT5aAVTO/4i7C8GxFIAdBmdcuGQ.EqSp2q/hSMm"
       reserved: true
       backend_roles:
       - "admin"
-      description: "Demo admin user"
+      description: "Demo admin user (password: admin)"
     
     kibanaserver:
       hash: "$2a$12$4AcgAt3xwOWadA5s5blL6ev39OXDNhmOesEoo33eZtrq2N0YrU3H."
