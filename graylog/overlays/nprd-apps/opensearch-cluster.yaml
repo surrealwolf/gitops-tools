@@ -15,7 +15,7 @@ metadata:
     cluster: nprd-apps
 spec:
   general:
-    version: "2.19.2"  # Minimum supported by operator v2.8.0 (supports 2.19.2 to 3.x)
+    version: "3.4.0"  # Latest supported by operator v2.8.0 (supports 2.19.2 to 3.x)
     serviceName: graylog-opensearch  # Service name for OpenSearch cluster
   security:
     config:
@@ -68,4 +68,4 @@ spec:
   dashboards:
     enable: false  # Disable OpenSearch Dashboards (Graylog provides UI)
     replicas: 0  # Required field (0 since disabled)
-    version: "2.19.2"  # Required field (same as OpenSearch version)
+    version: "3.4.0"  # Required field (same as OpenSearch version)
