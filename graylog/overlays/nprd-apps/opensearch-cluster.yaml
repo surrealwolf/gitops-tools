@@ -23,9 +23,8 @@ spec:
     # This tells OpenSearch which nodes should be the initial cluster managers
     additionalConfig:
       cluster.initial_cluster_manager_nodes: "graylog-opensearch-masters-0"
-      # Configure network publish host to use service hostname
-      # This helps with certificate hostname matching when clients connect via service
-      network.publish_host: "graylog-opensearch.managed-graylog.svc.cluster.local"
+      # Note: network.publish_host removed - let OpenSearch use pod IPs for transport
+      # Service hostname is only used for HTTP/REST API access, not transport layer
   security:
     config:
       adminCredentialsSecret:
