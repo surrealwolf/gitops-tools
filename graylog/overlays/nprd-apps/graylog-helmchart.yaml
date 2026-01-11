@@ -10,7 +10,7 @@ metadata:
   namespace: managed-tools
 spec:
   chart: graylog
-  repo: https://helm.graylog.io
+  repo: https://graylog2.github.io/graylog-helm
   targetNamespace: managed-tools
   valuesContent: |-
     # Graylog Configuration - nprd-apps cluster
