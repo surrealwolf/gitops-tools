@@ -1,0 +1,126 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: containerd-harbor-cert-config
+  namespace: managed-cicd
+  labels:
+    app: containerd-harbor-cert-config
+    managed-by: gitops
+spec:
+  selector:
+    matchLabels:
+      app: containerd-harbor-cert-config
+  template:
+    metadata:
+      labels:
+        app: containerd-harbor-cert-config
+        managed-by: gitops
+    spec:
+      # Run on all nodes (including master)
+      tolerations:
+        # Allow running on master nodes (K3s doesn't have taints by default, but this is good practice)
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      # Use host network to access node filesystem
+      hostNetwork: true
+      # Privileged container to write to node filesystem
+      containers:
+      - name: cert-config
+        image: alpine:latest
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          
+          # Determine containerd certs directory (K3s specific)
+          if [ -d "/var/lib/rancher/k3s/agent/etc/containerd/certs.d" ]; then
+            # K3s containerd certs directory
+            CERT_BASE_DIR="/var/lib/rancher/k3s/agent/etc/containerd/certs.d"
+          elif [ -d "/etc/containerd/certs.d" ]; then
+            # Standard containerd certs directory
+            CERT_BASE_DIR="/etc/containerd/certs.d"
+          else
+            echo "Warning: containerd certs directory not found, creating /etc/containerd/certs.d"
+            CERT_BASE_DIR="/etc/containerd/certs.d"
+          fi
+          
+          HARBOR_URL="harbor.dataknife.net"
+          CERT_DIR="${CERT_BASE_DIR}/${HARBOR_URL}"
+          CERT_FILE="${CERT_DIR}/ca.crt"
+          MOUNTED_CERT="/cert/ca.crt"
+          
+          echo "Configuring containerd to trust Harbor registry certificate..."
+          echo "Certificate directory: ${CERT_DIR}"
+          echo "Certificate file: ${CERT_FILE}"
+          echo "Mounted certificate: ${MOUNTED_CERT}"
+          
+          # Check if mounted certificate exists
+          if [ ! -f "${MOUNTED_CERT}" ]; then
+            echo "Error: Mounted certificate not found at ${MOUNTED_CERT}"
+            exit 1
+          fi
+          
+          # Create certificate directory
+          echo "Creating certificate directory: ${CERT_DIR}"
+          mkdir -p "${CERT_DIR}"
+          
+          # Copy certificate
+          echo "Copying certificate to ${CERT_FILE}"
+          cp "${MOUNTED_CERT}" "${CERT_FILE}"
+          chmod 644 "${CERT_FILE}"
+          
+          echo "✓ Certificate installed successfully"
+          echo "Certificate location: ${CERT_FILE}"
+          
+          # Verify certificate
+          if [ -f "${CERT_FILE}" ]; then
+            echo "✓ Certificate file verified"
+            openssl x509 -in "${CERT_FILE}" -noout -subject 2>/dev/null || echo "Warning: Could not verify certificate format"
+          else
+            echo "Error: Certificate file not found after copy"
+            exit 1
+          fi
+          
+          # Keep container running to maintain the mount
+          # The certificate is written to the node's filesystem, so the container can exit
+          # But we keep it running to re-apply if the node's filesystem is cleaned
+          echo "Certificate configuration complete. Keeping container running to maintain configuration..."
+          while true; do
+            # Verify certificate still exists every 60 seconds
+            if [ ! -f "${CERT_FILE}" ]; then
+              echo "Warning: Certificate file missing, re-copying..."
+              mkdir -p "${CERT_DIR}"
+              cp "${MOUNTED_CERT}" "${CERT_FILE}"
+              chmod 644 "${CERT_FILE}"
+            fi
+            sleep 60
+          done
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: harbor-cert
+          mountPath: /cert
+          readOnly: true
+        - name: k3s-containerd-certs
+          mountPath: /var/lib/rancher/k3s/agent/etc/containerd/certs.d
+        - name: containerd-certs
+          mountPath: /etc/containerd/certs.d
+      volumes:
+      - name: harbor-cert
+        secret:
+          secretName: harbor-ca-cert
+          items:
+          - key: ca.crt
+            path: ca.crt
+      - name: k3s-containerd-certs
+        hostPath:
+          path: /var/lib/rancher/k3s/agent/etc/containerd/certs.d
+          type: DirectoryOrCreate
+      - name: containerd-certs
+        hostPath:
+          path: /etc/containerd/certs.d
+          type: DirectoryOrCreate
+      restartPolicy: Always

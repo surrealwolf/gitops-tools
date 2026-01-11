@@ -5,8 +5,10 @@ namespace: managed-cicd
 
 resources:
   - gitlab-runner-helmchart.yaml
+  - containerd-harbor-cert-daemonset.yaml
   # Note: The wildcard-dataknife-net-tls secret must be copied to managed-cicd namespace
   # Run: ./scripts/sync-harbor-ca-cert.sh to sync the certificate from managed-tools namespace
+  # The DaemonSet automatically configures containerd on all nodes to trust Harbor certificates
 
 # Cluster-specific overrides for nprd-apps
 # Add any nprd-apps specific configurations here
