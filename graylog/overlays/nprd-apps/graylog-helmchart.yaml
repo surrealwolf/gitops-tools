@@ -46,15 +46,13 @@ spec:
         # Service name: graylog-opensearch (managed by OpenSearch Kubernetes Operator)
         GRAYLOG_ELASTICSEARCH_HOSTS: http://graylog-opensearch:9200
         # MongoDB connection (with authentication)
-        # Credentials: user 'graylog', password from secret 'graylog-backup-secret' key 'mongodb-db-password'
-        GRAYLOG_MONGODB_URI: mongodb://graylog:DfvCJoR48yfIFNyF@graylog-mongo-rs-svc:27017/graylog?replicaSet=graylog-mongo-rs
-        # Password secret (generate a secure random string, e.g., openssl rand -base64 64)
-        # Note: This should be set via secret in production
-        GRAYLOG_PASSWORD_SECRET: "changeme-password-secret-change-in-production"
-        # Root password SHA2 (generate with: echo -n "password" | shasum -a 256)
-        # Note: Default password is "admin" (SHA2: 8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918)
-        # Change this to your desired password
-        GRAYLOG_ROOT_PASSWORD_SHA2: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"
+        # SECURITY: Password is injected via secret reference using Job patch (graylog-secret-patch-job.yaml)
+        # The patch job replaces these placeholders with proper secret-based configuration
+        GRAYLOG_MONGODB_URI: "PLACEHOLDER_WILL_BE_REPLACED_BY_PATCH"
+        # Password secret (injected via secret reference in patch)
+        GRAYLOG_PASSWORD_SECRET: "PLACEHOLDER_WILL_BE_REPLACED_BY_PATCH"
+        # Root password SHA2 (injected via secret reference in patch)
+        GRAYLOG_ROOT_PASSWORD_SHA2: "PLACEHOLDER_WILL_BE_REPLACED_BY_PATCH"
         # Index rotation and retention configuration (configured via Graylog web UI after deployment)
         # Recommended settings for 2 weeks retention:
         #   - Index rotation strategy: Daily (rotate index every day)
