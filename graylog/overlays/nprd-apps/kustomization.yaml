@@ -21,6 +21,8 @@ resources:
   - graylog-secret-patch-job.yaml
   # OpenSearch CA certificate ConfigMap (for Java truststore import)
   - opensearch-ca-configmap.yaml
+  # Graylog ingress (manually created - Helm chart isn't creating it)
+  - graylog-ingress.yaml
   # Index configuration documentation (reference only, not deployed)
   # - graylog-index-config.yaml  # Uncomment if you want to reference this file
 
