@@ -69,7 +69,9 @@ spec:
       persistence:
         enabled: true
         storageClass: ""
-        size: 20Gi
+        size:
+          data: "20Gi"
+          logs: "2Gi"
       resources:
         requests:
           cpu: 100m
