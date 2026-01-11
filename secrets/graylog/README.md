@@ -32,6 +32,8 @@ Contains:
    
    # Root password SHA2 hash
    echo -n "your-strong-password" | shasum -a 256 | cut -d' ' -f1
+   # Example: echo -n "GN10hTf6YKtjF8cG" | shasum -a 256 | cut -d' ' -f1
+   # Result: ddd6795c071cc1695410368d1221ddf508cc8543f1a8abfd6d7056a171395ea4
    ```
 
 3. **Edit the secret file:**

@@ -80,7 +80,9 @@ Once deployed, access Graylog at:
 - **Web UI**: `https://graylog.dataknife.net` (via Ingress)
 - **Default Credentials**:
   - Username: `admin`
-  - Password: `admin` (default, change via web UI or `GRAYLOG_ROOT_PASSWORD_SHA2` env var)
+  - Password: Set via `GRAYLOG_ROOT_PASSWORD_SHA2` environment variable (SHA256 hash)
+  - Current password (nprd-apps): `GN10hTf6YKtjF8cG`
+  - **Note**: Password is stored as SHA256 hash in `graylog-backup-secret` secret, key `mongodb-root-password`
 
 ## UniFi CEF Syslog Configuration
 

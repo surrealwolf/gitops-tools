@@ -81,7 +81,9 @@ Once deployed, access Graylog at:
 - **URL**: `https://graylog.dataknife.net` (via Ingress)
 - **Default credentials**: Configured in overlay
   - Username: `admin`
-  - Password: Set via `GRAYLOG_ROOT_PASSWORD_SHA2` or via web UI
+  - Password: Set via `GRAYLOG_ROOT_PASSWORD_SHA2` environment variable (SHA256 hash)
+  - **Note**: `GRAYLOG_ROOT_PASSWORD_SHA2` must be a SHA256 hash, not a plain password
+  - Password hash is stored in secret (configured per overlay)
 
 ## UniFi CEF Syslog Configuration
 
