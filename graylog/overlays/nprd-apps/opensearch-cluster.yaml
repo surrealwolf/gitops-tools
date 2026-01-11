@@ -47,16 +47,19 @@ spec:
         caSecret:
           name: graylog-opensearch-ca  # CA certificate for trust
         # Certificate DN from our custom certificate
-        # Full DN: CN=graylog-opensearch, OU=OpenSearch, O=Graylog, L=Internal, ST=Internal, C=US
-        # Allow nodes with this certificate to connect
+        # Full DN (RFC2253 format - no spaces): CN=graylog-opensearch,OU=OpenSearch,O=Graylog,L=Internal,ST=Internal,C=US
+        # Error shows: {C=US,ST=Internal,L=Internal,O=Graylog,OU=OpenSearch,CN=graylog-opensearch}
+        # OpenSearch transport requires nodesDn to match the certificate's full DN
+        # Try RFC2253 format without spaces (as shown in error)
         nodesDn:
-          - "CN=graylog-opensearch, OU=OpenSearch, O=Graylog"  # Match exact CN, OU, O
-          - "CN=graylog-opensearch-masters-0, OU=OpenSearch, O=Graylog"  # Match master node
-          - "CN=graylog-opensearch-data-0, OU=OpenSearch, O=Graylog"  # Match data node
-          - "CN=graylog-opensearch*, OU=OpenSearch, O=Graylog"  # Wildcard for any node with this prefix
+          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog,L=Internal,ST=Internal,C=US"  # Full DN (RFC2253, no spaces)
+          - "C=US,ST=Internal,L=Internal,O=Graylog,OU=OpenSearch,CN=graylog-opensearch"  # Reverse order (as in error)
+          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog"  # Partial match
+          - "CN=graylog-opensearch*,OU=OpenSearch,O=Graylog"  # Wildcard
         # Admin certificate DN (for operator access)
         adminDn:
-          - "CN=graylog-opensearch, OU=OpenSearch, O=Graylog"
+          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog,L=Internal,ST=Internal,C=US"
+          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog"
   nodePools:
     - component: masters
       replicas: 1
