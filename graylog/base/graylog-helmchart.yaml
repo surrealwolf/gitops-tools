@@ -98,7 +98,7 @@ spec:
       # Elasticsearch/OpenSearch connection
       GRAYLOG_ELASTICSEARCH_HOSTS: http://graylog-opensearch:9200
       # MongoDB connection
-      GRAYLOG_MONGODB_URI: mongodb://graylog-mongodb:27017/graylog
+      GRAYLOG_MONGODB_URI: mongodb://graylog-mongo-rs-svc:27017/graylog?replicaSet=graylog-mongo-rs
       # Password secret (should be set in overlay)
       # GRAYLOG_PASSWORD_SECRET: <generate-secure-secret>
       # Root password SHA2 (should be set in overlay)
