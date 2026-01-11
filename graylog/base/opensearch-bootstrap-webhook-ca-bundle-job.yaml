@@ -151,12 +151,12 @@ metadata:
     component: ca-bundle-injector
     managed-by: gitops
 ---
-# Role for CA bundle injector (permissions to read secrets and patch webhook)
+# ClusterRole for CA bundle injector (permissions to read secrets and patch webhook)
+# Note: MutatingWebhookConfiguration is cluster-scoped, so ClusterRole is required
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: opensearch-bootstrap-webhook-ca-bundle-injector
-  namespace: managed-graylog
   labels:
     app: opensearch-bootstrap-webhook
     component: ca-bundle-injector
@@ -165,23 +165,25 @@ rules:
 - apiGroups: [""]
   resources: ["secrets"]
   verbs: ["get"]
+  resourceNames: ["opensearch-bootstrap-webhook-cert"]
+  namespaces: ["managed-graylog"]
 - apiGroups: ["admissionregistration.k8s.io"]
   resources: ["mutatingwebhookconfigurations"]
   verbs: ["get", "patch"]
+  resourceNames: ["opensearch-bootstrap-password-webhook"]
 ---
-# RoleBinding for CA bundle injector
+# ClusterRoleBinding for CA bundle injector
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: opensearch-bootstrap-webhook-ca-bundle-injector
-  namespace: managed-graylog
   labels:
     app: opensearch-bootstrap-webhook
     component: ca-bundle-injector
     managed-by: gitops
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: opensearch-bootstrap-webhook-ca-bundle-injector
 subjects:
 - kind: ServiceAccount
