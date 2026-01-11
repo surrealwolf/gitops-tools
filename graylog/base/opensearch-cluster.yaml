@@ -16,8 +16,8 @@ spec:
   general:
     version: "2.15.0"  # Latest OpenSearch version compatible with Graylog 5.2
     serviceName: graylog-opensearch  # Service name for OpenSearch cluster
-    additionalConfig:
-      plugins.security.disabled: "true"  # Disable security plugin (Graylog handles authentication)
+    # Note: Operator creates secret 'graylog-opensearch-admin-password' with password 'admin'
+    # The operator should automatically inject OPENSEARCH_INITIAL_ADMIN_PASSWORD from this secret
   nodePools:
     - component: masters
       replicas: 1
