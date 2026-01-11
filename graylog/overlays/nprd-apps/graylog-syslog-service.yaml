@@ -31,8 +31,8 @@ spec:
     # Example: UniFi Network Application → System Logs → SIEM Integration
     #          Syslog Server: <node-ip>:30514
   selector:
-    app: graylog
-    component: server
+    app.kubernetes.io/name: graylog
+    app: graylog-app
   # Note: This service targets the Graylog server pod
   # The syslog input must be configured in Graylog web UI after deployment:
   # 1. Go to System → Inputs
