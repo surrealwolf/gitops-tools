@@ -38,25 +38,18 @@ spec:
       javaOpts: "-Xms2g -Xmx2g -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:+CMSClassUnloadingEnabled -XX:+UseParNewGC -XX:-OmitStackTraceInFastThrow"
     
     # MongoDB Configuration (Graylog metadata store)
-    # Option 1: Deploy MongoDB with Helm chart (internal)
+    # Using MongoDB Community Operator (communityResource)
     mongodb:
-      enabled: true
-      architecture: standalone
-      auth:
-        enabled: false  # Disable auth for simplicity (enable for production)
-      persistence:
+      communityResource:
         enabled: true
+      version: "7.0.25"
+      replicas: 1  # Single replica for standalone deployment
+      arbiters: 0  # No arbiters for standalone
+      persistence:
         storageClass: ""
         size:
           data: "20Gi"
           logs: "2Gi"
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
     
     # OpenSearch Configuration (Graylog log storage)
     # Option 1: Deploy OpenSearch with Helm chart (internal)

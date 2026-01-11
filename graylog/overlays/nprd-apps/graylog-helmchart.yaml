@@ -61,24 +61,18 @@ spec:
         # Note: These settings are configured in Graylog web UI under System → Indices
     
     # MongoDB Configuration (Graylog metadata store)
+    # Using MongoDB Community Operator (communityResource)
     mongodb:
-      enabled: true
-      architecture: standalone
-      auth:
-        enabled: false  # Disable auth for simplicity (enable for production)
-      persistence:
+      communityResource:
         enabled: true
+      version: "7.0.25"
+      replicas: 1  # Single replica for standalone deployment
+      arbiters: 0  # No arbiters for standalone
+      persistence:
         storageClass: ""
         size:
           data: "20Gi"
           logs: "2Gi"
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
     
     # OpenSearch Configuration (Graylog log storage)
     # SIZED FOR: 2 weeks retention from 2 UniFi instances + growth for more use cases
