@@ -30,14 +30,22 @@ spec:
     config:
       adminCredentialsSecret:
         name: graylog-opensearch-admin-password  # Secret for operator access (post-bootstrap)
-    # Configure TLS certificates to include service hostname
-    # Force regeneration by explicitly setting generate: true
-    # This will regenerate certificates that include the service hostname
+    # Use custom TLS certificates with correct hostname (graylog-opensearch)
+    # Certificates generated with: scripts/generate-opensearch-certs.sh
+    # Certificates include service hostname and pod hostnames in SAN
     tls:
       http:
-        generate: true  # Regenerate HTTP certificates with service hostname
+        generate: false  # Use custom certificates instead of auto-generated
+        secret:
+          name: graylog-opensearch-http-certs  # Secret with tls.crt, tls.key, ca.crt
+        caSecret:
+          name: graylog-opensearch-ca  # CA certificate for trust
       transport:
-        generate: true  # Regenerate transport certificates
+        generate: false  # Use custom certificates instead of auto-generated
+        secret:
+          name: graylog-opensearch-transport-certs  # Secret with tls.crt, tls.key, ca.crt
+        caSecret:
+          name: graylog-opensearch-ca  # CA certificate for trust
   nodePools:
     - component: masters
       replicas: 1
