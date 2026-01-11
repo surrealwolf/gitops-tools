@@ -62,6 +62,11 @@ spec:
             cpu_request = "100m"
             memory_request = "128Mi"
             
+            # BuildKit rootless support - disable AppArmor for build containers
+            # This allows BuildKit rootless to perform required mount operations
+            [runners.kubernetes.pod_annotations]
+              "container.apparmor.security.beta.kubernetes.io/build" = "unconfined"
+            
             # Mount Harbor CA certificate for Docker registry access
             # Uses harbor-ca-cert secret with only the CA certificate (no private key)
             # This allows job pods to pull/push images from Harbor registry
