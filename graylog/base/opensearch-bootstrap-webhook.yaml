@@ -46,10 +46,16 @@ webhooks:
     namespaceSelector:
       matchLabels:
         name: managed-graylog
-    # Exclude CA bundle injector job pods (chicken-and-egg: job needs to run to inject CA bundle)
+    # Exclude CA bundle injector job pods and webhook server pods (chicken-and-egg problem)
+    # - Job pods need to run to inject CA bundle
+    # - Webhook server pods need to run to provide endpoints, but webhook intercepts their creation
     objectSelector:
       matchExpressions:
       - key: component
         operator: NotIn
         values:
         - ca-bundle-injector
+      - key: app
+        operator: NotIn
+        values:
+        - opensearch-bootstrap-webhook
