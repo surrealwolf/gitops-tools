@@ -54,9 +54,9 @@ spec:
         GRAYLOG_ELASTICSEARCH_USE_SSL: "true"
         GRAYLOG_ELASTICSEARCH_VERIFY_SSL: "false"
         # MongoDB connection (with authentication)
-        # SECURITY: Password is injected via secret reference using Job patch (graylog-secret-patch-job.yaml)
-        # The patch job replaces these placeholders with proper secret-based configuration
-        GRAYLOG_MONGODB_URI: "PLACEHOLDER_WILL_BE_REPLACED_BY_PATCH"
+        # SECURITY: MongoDB URI is set by the command from /shared/mongodb-uri file
+        # The file is created by the mongodb-uri-builder init container (added by patch job)
+        # Do not set GRAYLOG_MONGODB_URI here - it will be set by the container command
         # Password secret (injected via secret reference in patch)
         GRAYLOG_PASSWORD_SECRET: "PLACEHOLDER_WILL_BE_REPLACED_BY_PATCH"
         # Root password SHA2 (injected via secret reference in patch)
