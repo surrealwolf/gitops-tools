@@ -1,0 +1,12 @@
+# Patch to fix syslog service selector
+# Kustomize commonLabels adds app=graylog, but the pod has app=graylog-app
+# This patch ensures the service selector matches the pod labels
+apiVersion: v1
+kind: Service
+metadata:
+  name: graylog-syslog
+  namespace: managed-graylog
+spec:
+  selector:
+    app: graylog-app
+    app.kubernetes.io/name: graylog

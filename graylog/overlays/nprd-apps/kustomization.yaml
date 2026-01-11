@@ -35,3 +35,5 @@ commonLabels:
 # The webhook Deployment/Service selector must remain app=opensearch-bootstrap-webhook
 patchesStrategicMerge:
   - opensearch-bootstrap-webhook-selector-patch.yaml
+  # Fix syslog service selector - pod has app=graylog-app, not app=graylog
+  - graylog-syslog-service-selector-patch.yaml
