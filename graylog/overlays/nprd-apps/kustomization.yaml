@@ -17,6 +17,8 @@ resources:
   - opensearch-bootstrap-webhook.yaml
   # CA bundle injection job (runs after certificate creation)
   - opensearch-bootstrap-webhook-ca-bundle-job.yaml
+  # Graylog secret patch job (patches StatefulSet after Helm creates it)
+  - graylog-secret-patch-job.yaml
   # Index configuration documentation (reference only, not deployed)
   # - graylog-index-config.yaml  # Uncomment if you want to reference this file
 
@@ -29,4 +31,3 @@ commonLabels:
 # The webhook Deployment/Service selector must remain app=opensearch-bootstrap-webhook
 patchesStrategicMerge:
   - opensearch-bootstrap-webhook-selector-patch.yaml
-  - graylog-secret-patch.yaml
