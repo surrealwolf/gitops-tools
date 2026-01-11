@@ -43,8 +43,9 @@ spec:
         GRAYLOG_HTTP_EXTERNAL_URI: https://graylog.dataknife.net/
         # Elasticsearch/OpenSearch connection
         GRAYLOG_ELASTICSEARCH_HOSTS: http://graylog-opensearch:9200
-        # MongoDB connection
-        GRAYLOG_MONGODB_URI: mongodb://graylog-mongo-rs-svc:27017/graylog?replicaSet=graylog-mongo-rs
+        # MongoDB connection (with authentication)
+        # Credentials: user 'graylog', password from secret 'graylog-backup-secret' key 'mongodb-db-password'
+        GRAYLOG_MONGODB_URI: mongodb://graylog:DfvCJoR48yfIFNyF@graylog-mongo-rs-svc:27017/graylog?replicaSet=graylog-mongo-rs
         # Password secret (generate a secure random string, e.g., openssl rand -base64 64)
         # Note: This should be set via secret in production
         GRAYLOG_PASSWORD_SECRET: "changeme-password-secret-change-in-production"
