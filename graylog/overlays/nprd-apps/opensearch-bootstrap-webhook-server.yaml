@@ -178,7 +178,7 @@ data:
     
     # Load in-cluster Kubernetes config
     try:
-        config.load_in_cluster_config()
+        config.load_incluster_config()
         v1 = client.CoreV1Api()
     except Exception as e:
         print(f"Error loading Kubernetes config: {e}")
