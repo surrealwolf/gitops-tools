@@ -16,6 +16,8 @@ spec:
   general:
     version: "2.15.0"  # Latest OpenSearch version compatible with Graylog 5.2
     serviceName: graylog-opensearch  # Service name for OpenSearch cluster
+    additionalConfig:
+      plugins.security.disabled: "true"  # Disable security plugin (Graylog handles authentication)
   nodePools:
     - component: masters
       replicas: 1
