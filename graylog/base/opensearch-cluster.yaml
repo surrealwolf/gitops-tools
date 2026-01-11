@@ -45,6 +45,8 @@ spec:
       persistence:
         pvc:
           storageClass: ""  # Use default storage class (truenas-nfs)
+          accessModes:
+            - ReadWriteOnce  # Required for StatefulSets
     - component: data
       replicas: 1
       roles:
@@ -66,6 +68,8 @@ spec:
       persistence:
         pvc:
           storageClass: ""  # Use default storage class (truenas-nfs)
+          accessModes:
+            - ReadWriteOnce  # Required for StatefulSets
   dashboards:
     enable: false  # Disable OpenSearch Dashboards (Graylog provides UI)
     replicas: 0  # Required field (0 since disabled)
