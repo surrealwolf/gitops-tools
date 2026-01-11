@@ -46,13 +46,17 @@ spec:
           name: graylog-opensearch-transport-certs  # Secret with tls.crt, tls.key, ca.crt
         caSecret:
           name: graylog-opensearch-ca  # CA certificate for trust
-        # Certificate DN from our custom certificate: CN=graylog-opensearch, OU=OpenSearch, O=Graylog, L=Internal, ST=Internal, C=US
-        # Allow this DN to connect as a node
+        # Certificate DN from our custom certificate
+        # Full DN: CN=graylog-opensearch, OU=OpenSearch, O=Graylog, L=Internal, ST=Internal, C=US
+        # Allow nodes with this certificate to connect
         nodesDn:
-          - "CN=graylog-opensearch*,OU=OpenSearch,O=Graylog"  # Wildcard to match all nodes
-        # Admin certificate DN (if needed for operator)
+          - "CN=graylog-opensearch, OU=OpenSearch, O=Graylog"  # Match exact CN, OU, O
+          - "CN=graylog-opensearch-masters-0, OU=OpenSearch, O=Graylog"  # Match master node
+          - "CN=graylog-opensearch-data-0, OU=OpenSearch, O=Graylog"  # Match data node
+          - "CN=graylog-opensearch*, OU=OpenSearch, O=Graylog"  # Wildcard for any node with this prefix
+        # Admin certificate DN (for operator access)
         adminDn:
-          - "CN=graylog-opensearch*,OU=OpenSearch,O=Graylog"
+          - "CN=graylog-opensearch, OU=OpenSearch, O=Graylog"
   nodePools:
     - component: masters
       replicas: 1
