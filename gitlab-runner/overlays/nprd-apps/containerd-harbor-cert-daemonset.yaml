@@ -16,9 +16,9 @@ spec:
         app: containerd-harbor-cert-config
         managed-by: gitops
     spec:
-      # Run on all nodes (including master)
+      # Run on all nodes (including control-plane)
       tolerations:
-        # Allow running on master nodes (K3s doesn't have taints by default, but this is good practice)
+        # Allow running on control-plane nodes (RKE2 doesn't have taints by default, but this is good practice)
         - effect: NoSchedule
           operator: Exists
         - effect: NoExecute
@@ -38,18 +38,18 @@ spec:
           HARBOR_URL="harbor.dataknife.net"
           MOUNTED_CERT="/cert/ca.crt"
           
-          # K3s registry configuration paths
-          K3S_REGISTRY_DIR="/etc/rancher/k3s"
-          K3S_REGISTRY_YAML="${K3S_REGISTRY_DIR}/registries.yaml"
-          K3S_CERT_FILE="${K3S_REGISTRY_DIR}/harbor-ca.crt"
+          # RKE2 registry configuration paths
+          RKE2_REGISTRY_DIR="/etc/rancher/rke2"
+          RKE2_REGISTRY_YAML="${RKE2_REGISTRY_DIR}/registries.yaml"
+          RKE2_CERT_FILE="${RKE2_REGISTRY_DIR}/harbor-ca.crt"
           
           # Also configure containerd certs.d directory (backup method)
-          CONTAINERD_CERTS_DIR="/var/lib/rancher/k3s/agent/etc/containerd/certs.d/${HARBOR_URL}"
+          CONTAINERD_CERTS_DIR="/var/lib/rancher/rke2/agent/etc/containerd/certs.d/${HARBOR_URL}"
           CONTAINERD_CERT_FILE="${CONTAINERD_CERTS_DIR}/ca.crt"
           
-          echo "Configuring K3s to trust Harbor registry certificate..."
-          echo "K3s registry config: ${K3S_REGISTRY_YAML}"
-          echo "K3s certificate file: ${K3S_CERT_FILE}"
+          echo "Configuring RKE2 to trust Harbor registry certificate..."
+          echo "RKE2 registry config: ${RKE2_REGISTRY_YAML}"
+          echo "RKE2 certificate file: ${RKE2_CERT_FILE}"
           echo "Mounted certificate: ${MOUNTED_CERT}"
           
           # Check if mounted certificate exists
@@ -58,18 +58,18 @@ spec:
             exit 1
           fi
           
-          # Create K3s registry directory
-          echo "Creating K3s registry directory: ${K3S_REGISTRY_DIR}"
-          mkdir -p "${K3S_REGISTRY_DIR}"
+          # Create RKE2 registry directory
+          echo "Creating RKE2 registry directory: ${RKE2_REGISTRY_DIR}"
+          mkdir -p "${RKE2_REGISTRY_DIR}"
           
-          # Copy certificate for K3s registries.yaml
-          echo "Copying certificate to ${K3S_CERT_FILE}"
-          cp "${MOUNTED_CERT}" "${K3S_CERT_FILE}"
-          chmod 644 "${K3S_CERT_FILE}"
+          # Copy certificate for RKE2 registries.yaml
+          echo "Copying certificate to ${RKE2_CERT_FILE}"
+          cp "${MOUNTED_CERT}" "${RKE2_CERT_FILE}"
+          chmod 644 "${RKE2_CERT_FILE}"
           
-          # Create K3s registries.yaml configuration
-          echo "Creating K3s registries.yaml configuration..."
-          cat > "${K3S_REGISTRY_YAML}" <<EOF
+          # Create RKE2 registries.yaml configuration
+          echo "Creating RKE2 registries.yaml configuration..."
+          cat > "${RKE2_REGISTRY_YAML}" <<EOF
           mirrors:
             "${HARBOR_URL}":
               endpoint:
@@ -77,11 +77,11 @@ spec:
           configs:
             "${HARBOR_URL}":
               tls:
-                ca_file: "${K3S_CERT_FILE}"
+                ca_file: "${RKE2_CERT_FILE}"
           EOF
           
-          chmod 644 "${K3S_REGISTRY_YAML}"
-          echo "✓ K3s registries.yaml created"
+          chmod 644 "${RKE2_REGISTRY_YAML}"
+          echo "✓ RKE2 registries.yaml created"
           
           # Also configure containerd certs.d (for compatibility)
           echo "Also configuring containerd certs.d directory..."
@@ -91,22 +91,22 @@ spec:
           echo "✓ containerd certs.d configured"
           
           echo "✓ Certificate configuration complete"
-          echo "K3s registries.yaml: ${K3S_REGISTRY_YAML}"
-          echo "Certificate file: ${K3S_CERT_FILE}"
+          echo "RKE2 registries.yaml: ${RKE2_REGISTRY_YAML}"
+          echo "Certificate file: ${RKE2_CERT_FILE}"
           echo ""
-          echo "Note: K3s service may need to be restarted for changes to take effect."
+          echo "Note: RKE2 service may need to be restarted for changes to take effect."
           echo "The certificate is configured, but you may need to run:"
-          echo "  sudo systemctl restart k3s-agent  # or k3s on master nodes"
+          echo "  sudo systemctl restart rke2-agent  # or rke2-server on control-plane nodes"
           echo ""
           echo "Keeping container running to maintain configuration..."
           while true; do
             # Verify certificate and config files still exist every 60 seconds
-            if [ ! -f "${K3S_CERT_FILE}" ] || [ ! -f "${K3S_REGISTRY_YAML}" ]; then
+            if [ ! -f "${RKE2_CERT_FILE}" ] || [ ! -f "${RKE2_REGISTRY_YAML}" ]; then
               echo "Warning: Certificate or config missing, re-applying..."
-              mkdir -p "${K3S_REGISTRY_DIR}"
-              cp "${MOUNTED_CERT}" "${K3S_CERT_FILE}"
-              chmod 644 "${K3S_CERT_FILE}"
-              cat > "${K3S_REGISTRY_YAML}" <<EOF
+              mkdir -p "${RKE2_REGISTRY_DIR}"
+              cp "${MOUNTED_CERT}" "${RKE2_CERT_FILE}"
+              chmod 644 "${RKE2_CERT_FILE}"
+              cat > "${RKE2_REGISTRY_YAML}" <<EOF
           mirrors:
             "${HARBOR_URL}":
               endpoint:
@@ -114,9 +114,9 @@ spec:
           configs:
             "${HARBOR_URL}":
               tls:
-                ca_file: "${K3S_CERT_FILE}"
+                ca_file: "${RKE2_CERT_FILE}"
           EOF
-              chmod 644 "${K3S_REGISTRY_YAML}"
+              chmod 644 "${RKE2_REGISTRY_YAML}"
             fi
             sleep 60
           done
@@ -126,10 +126,10 @@ spec:
         - name: harbor-cert
           mountPath: /cert
           readOnly: true
-        - name: k3s-containerd-certs
-          mountPath: /var/lib/rancher/k3s/agent/etc/containerd/certs.d
-        - name: k3s-registry-config
-          mountPath: /etc/rancher/k3s
+        - name: rke2-containerd-certs
+          mountPath: /var/lib/rancher/rke2/agent/etc/containerd/certs.d
+        - name: rke2-registry-config
+          mountPath: /etc/rancher/rke2
       volumes:
       - name: harbor-cert
         secret:
@@ -137,12 +137,12 @@ spec:
           items:
           - key: ca.crt
             path: ca.crt
-      - name: k3s-containerd-certs
+      - name: rke2-containerd-certs
         hostPath:
-          path: /var/lib/rancher/k3s/agent/etc/containerd/certs.d
+          path: /var/lib/rancher/rke2/agent/etc/containerd/certs.d
           type: DirectoryOrCreate
-      - name: k3s-registry-config
+      - name: rke2-registry-config
         hostPath:
-          path: /etc/rancher/k3s
+          path: /etc/rancher/rke2
           type: DirectoryOrCreate
       restartPolicy: Always
