@@ -1,0 +1,114 @@
+# OpenSearch Bootstrap Password Patch Job (Temporary Workaround)
+#
+# This is a TEMPORARY workaround that patches the bootstrap pod
+# after it's created. This is NOT ideal because:
+# - Pod must exist before job runs
+# - Patch is lost if operator recreates pod
+# - Requires manual execution or CronJob
+#
+# For a permanent solution, use MutatingAdmissionWebhook (see OPENSEARCH_BOOTSTRAP_WORKAROUND.md)
+#
+# Usage:
+#   1. Wait for bootstrap pod to exist
+#   2. Run this job: kubectl apply -f opensearch-bootstrap-patch-job.yaml.example
+#   3. Job patches pod with OPENSEARCH_INITIAL_ADMIN_PASSWORD
+#   4. Pod restarts with password and should start successfully
+#
+# Note: If pod is recreated by operator, job must be run again.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: opensearch-bootstrap-patch-$(date +%s)  # Unique name each run
+  namespace: managed-tools
+  labels:
+    app: opensearch-bootstrap-patch
+    managed-by: gitops
+spec:
+  ttlSecondsAfterFinished: 3600  # Clean up after 1 hour
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: opensearch-bootstrap-patch
+      containers:
+        - name: patch
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              
+              # Wait for bootstrap pod to exist
+              echo "Waiting for bootstrap pod to exist..."
+              for i in {1..30}; do
+                if kubectl get pod graylog-opensearch-bootstrap-0 -n managed-tools &>/dev/null; then
+                  echo "Bootstrap pod found"
+                  break
+                fi
+                echo "Waiting... ($i/30)"
+                sleep 2
+              done
+              
+              # Get password from secret
+              echo "Reading password from secret..."
+              PASSWORD=$(kubectl get secret graylog-opensearch-admin-password -n managed-tools \
+                -o jsonpath='{.data.password}' | base64 -d)
+              
+              # Check if password env already exists
+              if kubectl get pod graylog-opensearch-bootstrap-0 -n managed-tools \
+                -o jsonpath='{.spec.containers[0].env[*].name}' | grep -q OPENSEARCH_INITIAL_ADMIN_PASSWORD; then
+                echo "Password environment variable already exists"
+                exit 0
+              fi
+              
+              # Patch pod to add environment variable
+              echo "Patching bootstrap pod..."
+              kubectl patch pod graylog-opensearch-bootstrap-0 -n managed-tools --type='json' \
+                -p="[{\"op\": \"add\", \"path\": \"/spec/containers/0/env/-\", \"value\": {\"name\": \"OPENSEARCH_INITIAL_ADMIN_PASSWORD\", \"value\": \"${PASSWORD}\"}}]"
+              
+              echo "Patch applied successfully"
+              echo "Pod will restart and should start with password"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: opensearch-bootstrap-patch
+  namespace: managed-tools
+  labels:
+    app: opensearch-bootstrap-patch
+    managed-by: gitops
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: opensearch-bootstrap-patch
+  namespace: managed-tools
+  labels:
+    app: opensearch-bootstrap-patch
+    managed-by: gitops
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["graylog-opensearch-admin-password"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: opensearch-bootstrap-patch
+  namespace: managed-tools
+  labels:
+    app: opensearch-bootstrap-patch
+    managed-by: gitops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: opensearch-bootstrap-patch
+subjects:
+  - kind: ServiceAccount
+    name: opensearch-bootstrap-patch
+    namespace: managed-tools
