@@ -9,9 +9,7 @@ resources:
   # Cluster-specific Helm chart configuration (contains all values)
   - graylog-helmchart.yaml
   # Syslog service for UniFi CEF input (NodePort for external access)
-  # NOTE: Service removed from Fleet management to allow manual selector patching
-  # See graylog-syslog-service.yaml for manual deployment instructions
-  # - graylog-syslog-service.yaml
+  - graylog-syslog-service.yaml
   # OpenSearch bootstrap password workaround (MutatingAdmissionWebhook)
   - opensearch-bootstrap-webhook-issuer.yaml
   - opensearch-bootstrap-webhook-server.yaml
@@ -29,9 +27,9 @@ resources:
   # - graylog-index-config.yaml  # Uncomment if you want to reference this file
 
 commonLabels:
-  app: graylog
   managed-by: gitops
   cluster: nprd-apps
+  # Note: app=graylog removed because it conflicts with pod labels (pods have app=graylog-app)
 
 # Exclude webhook resources from commonLabels to prevent immutable selector conflicts
 # The webhook Deployment/Service selector must remain app=opensearch-bootstrap-webhook
