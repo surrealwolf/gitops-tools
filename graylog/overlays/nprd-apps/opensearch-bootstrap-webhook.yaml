@@ -21,6 +21,7 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 webhooks:
   - name: opensearch-bootstrap-password.opensearch.local
     admissionReviewVersions:

@@ -20,6 +20,7 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 spec:
   secretName: opensearch-bootstrap-webhook-cert
   issuerRef:

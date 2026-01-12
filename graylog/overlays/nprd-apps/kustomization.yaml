@@ -26,12 +26,5 @@ resources:
   # Index configuration documentation (reference only, not deployed)
   # - graylog-index-config.yaml  # Uncomment if you want to reference this file
 
-commonLabels:
-  managed-by: gitops
-  cluster: nprd-apps
-  # Note: app=graylog removed because it conflicts with pod labels (pods have app=graylog-app)
-
-# Exclude webhook resources from commonLabels to prevent immutable selector conflicts
-# The webhook Deployment/Service selector must remain app=opensearch-bootstrap-webhook
-patchesStrategicMerge:
-  - opensearch-bootstrap-webhook-selector-patch.yaml
+# Labels and selectors are explicitly defined in each resource file
+# This gives full control and avoids issues with kustomize commonLabels

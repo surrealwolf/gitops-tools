@@ -31,8 +31,7 @@ spec:
     # Example: UniFi Network Application → System Logs → SIEM Integration
     #          Syslog Server: <node-ip>:30514
   selector:
-    # Match pod labels - pod has: app=graylog-app, app.kubernetes.io/name=graylog, app.kubernetes.io/instance=graylog
-    app: graylog-app
+    # Match pod labels - pod has: app.kubernetes.io/name=graylog, app.kubernetes.io/instance=graylog
     app.kubernetes.io/name: graylog
     app.kubernetes.io/instance: graylog
   # Note: This service targets the Graylog server pod

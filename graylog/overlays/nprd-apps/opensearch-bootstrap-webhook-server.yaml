@@ -21,6 +21,7 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -30,6 +31,7 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 rules:
   # Read the admin password secret
   - apiGroups: [""]
@@ -45,6 +47,7 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -62,6 +65,7 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 spec:
   ports:
     - port: 443
@@ -79,16 +83,21 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: opensearch-bootstrap-webhook
+      managed-by: gitops
+      cluster: nprd-apps
   template:
     metadata:
       labels:
         app: opensearch-bootstrap-webhook
         component: webhook-server
+        managed-by: gitops
+        cluster: nprd-apps
     spec:
       serviceAccountName: opensearch-bootstrap-webhook
       containers:
@@ -159,6 +168,7 @@ metadata:
   labels:
     app: opensearch-bootstrap-webhook
     managed-by: gitops
+    cluster: nprd-apps
 data:
   webhook.py: |
     #!/usr/bin/env python3

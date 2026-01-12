@@ -12,6 +12,7 @@ metadata:
     app.kubernetes.io/instance: graylog
     app.kubernetes.io/component: graylog
     managed-by: gitops
+    cluster: nprd-apps
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/proxy-body-size: "0"
