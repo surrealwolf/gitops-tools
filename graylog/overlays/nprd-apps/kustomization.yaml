@@ -35,6 +35,6 @@ commonLabels:
 # The webhook Deployment/Service selector must remain app=opensearch-bootstrap-webhook
 patchesStrategicMerge:
   - opensearch-bootstrap-webhook-selector-patch.yaml
-  # Fix syslog service selector - use app.kubernetes.io/name to avoid commonLabels conflicts
+  # Fix syslog service selector - override commonLabels app=graylog with app=graylog-app to match pod
   # Pod has app=graylog-app, but commonLabels adds app=graylog to selector
   - graylog-syslog-service-selector-patch.yaml

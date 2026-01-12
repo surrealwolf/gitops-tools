@@ -1,7 +1,7 @@
 # Patch to fix syslog service selector
-# Use app.kubernetes.io/name selector to avoid commonLabels conflicts
-# Pod has: app=graylog-app, app.kubernetes.io/name=graylog
-# commonLabels adds app=graylog to selector, which doesn't match pod
+# Override commonLabels app=graylog with app=graylog-app to match pod
+# Pod has: app=graylog-app, app.kubernetes.io/name=graylog, app.kubernetes.io/instance=graylog
+# commonLabels adds app=graylog to selector, which doesn't match pod's app=graylog-app
 # Use $patch: replace on spec to completely replace selector (overrides commonLabels)
 # Must include all spec fields because $patch: replace replaces the entire spec
 apiVersion: v1
@@ -19,4 +19,6 @@ spec:
     protocol: UDP
     nodePort: 30514
   selector:
+    app: graylog-app
     app.kubernetes.io/name: graylog
+    app.kubernetes.io/instance: graylog
