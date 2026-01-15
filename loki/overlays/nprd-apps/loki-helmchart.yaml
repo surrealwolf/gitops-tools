@@ -15,8 +15,8 @@ spec:
   targetNamespace: managed-syslog
   valuesContent: |-
     # Loki Configuration - Latest stable version 3.6.2
-    # Microservices mode - recommended for production workloads requiring high availability
-    deploymentMode: MicroServices
+    # Microservices mode (Distributed) - recommended for production workloads requiring high availability
+    deploymentMode: Distributed
     
     # Authentication
     auth_enabled: false
