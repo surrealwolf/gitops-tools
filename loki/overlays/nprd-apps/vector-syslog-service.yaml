@@ -1,7 +1,7 @@
 # Vector Syslog Service for UniFi CEF Input
 #
-# This service exposes Vector's syslog receiver via NodePort for external access.
-# UniFi devices will send CEF-formatted syslog to this service.
+# This service exposes Vector's syslog receiver for external access.
+# UniFi devices will send CEF-formatted syslog to vector.dataknife.net:514
 # Vector will parse the CEF format and forward to Loki.
 #
 apiVersion: v1
@@ -15,21 +15,24 @@ metadata:
     managed-by: gitops
     cluster: nprd-apps
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
   - name: syslog-udp
     port: 514
     targetPort: 514
     protocol: UDP
-    # UDP syslog port - UniFi devices send CEF syslog here
+    # UDP syslog port - UniFi devices send CEF syslog to vector.dataknife.net:514
   - name: metrics
     port: 9598
     targetPort: 9598
     protocol: TCP
-    # Metrics and health endpoint - exposed via ingress
+    # Metrics and health endpoint - exposed via ingress at vector.dataknife.net
   selector:
     # Match Vector pod labels
     app: vector
     component: syslog
-  # Note: Vector automatically receives syslog on UDP 514 and parses CEF format
-  # No additional configuration needed - logs are automatically forwarded to Loki
+  # Note: 
+  # - UDP port 514 (syslog) is exposed via LoadBalancer for vector.dataknife.net
+  # - TCP port 9598 (metrics) is exposed via ingress at vector.dataknife.net
+  # - Vector automatically receives syslog on UDP 514 and parses CEF format
+  # - DNS: Point vector.dataknife.net A record to LoadBalancer external IP
