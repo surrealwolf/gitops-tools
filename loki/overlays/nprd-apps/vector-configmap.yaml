@@ -32,13 +32,13 @@ data:
           if match(cef_message, r'^CEF:') {
             parts = split(cef_message, "|")
             if length(parts) >= 7 {
-              if length(parts) > 1 { .device_vendor = parts[1] ?? "" }
-              if length(parts) > 2 { .device_product = parts[2] ?? "" }
-              if length(parts) > 3 { .device_version = parts[3] ?? "" }
-              if length(parts) > 4 { .signature_id = parts[4] ?? "" }
-              if length(parts) > 5 { .cef_name = parts[5] ?? "" }
+              if length(parts) > 1 { .device_vendor = parts[1] }
+              if length(parts) > 2 { .device_product = parts[2] }
+              if length(parts) > 3 { .device_version = parts[3] }
+              if length(parts) > 4 { .signature_id = parts[4] }
+              if length(parts) > 5 { .cef_name = parts[5] }
               if length(parts) > 6 {
-                severity_str = parts[6] ?? "0"
+                severity_str = parts[6]
                 .severity = to_int(severity_str)
               }
             }
