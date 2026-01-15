@@ -111,12 +111,8 @@ data:
     encoding.codec = "json"
     
     # Loki labels for indexing
+    # Note: Vector 0.38.0 uses static labels or field references
     labels = {
-      source = "{{ source }}",
-      source_type = "{{ source_type }}",
-      format = "{{ format }}",
-      device_vendor = "{{ device_vendor }}",
-      device_product = "{{ device_product }}",
       namespace = "unifi",
       app = "unifi-cef"
     }
