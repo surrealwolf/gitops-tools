@@ -51,8 +51,11 @@ data:
     type = "loki"
     inputs = ["parse_cef"]
     endpoint = "http://loki-distributor:3100"
+    path = "/loki/api/v1/push"
     encoding.codec = "json"
     [sinks.loki.labels]
     namespace = "unifi"
     app = "unifi-cef"
+    source = "syslog"
+    format = "cef"
     remove_label_fields = true
