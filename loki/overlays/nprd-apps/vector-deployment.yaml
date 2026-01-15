@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: vector
-        image: docker.io/vectordotdev/vector:0.52.0-debian
+        image: timberio/vector:0.52.0-alpine
         imagePullPolicy: IfNotPresent
         ports:
         - name: syslog-udp
