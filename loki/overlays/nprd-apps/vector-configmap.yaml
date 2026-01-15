@@ -39,7 +39,10 @@ data:
               if length(parts) > 5 { .cef_name = parts[5] }
               if length(parts) > 6 {
                 severity_str = parts[6]
-                .severity = to_int(severity_str)
+                .severity, err = to_int(severity_str)
+                if err != null {
+                  .severity = 0
+                }
               }
             }
             .source = "unifi-cef"
