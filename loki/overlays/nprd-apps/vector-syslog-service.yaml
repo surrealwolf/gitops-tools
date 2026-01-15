@@ -15,13 +15,15 @@ metadata:
     managed-by: gitops
     cluster: nprd-apps
 spec:
-  type: LoadBalancer
+  type: NodePort
   ports:
   - name: syslog-udp
     port: 514
     targetPort: 514
     protocol: UDP
-    # UDP syslog port - UniFi devices send CEF syslog to vector.dataknife.net:514
+    nodePort: 30514
+    # UDP syslog port - UniFi devices send CEF syslog to vector.dataknife.net:30514
+    # NodePort 30514 maps to internal port 514 UDP
   - name: metrics
     port: 9598
     targetPort: 9598
@@ -32,7 +34,8 @@ spec:
     app: vector
     component: syslog
   # Note: 
-  # - UDP port 514 (syslog) is exposed via LoadBalancer for vector.dataknife.net
+  # - UDP port 514 (syslog) is exposed via NodePort 30514
+  # - DNS: Point vector.dataknife.net A record to cluster node IPs (worker nodes recommended)
+  # - UniFi devices send to vector.dataknife.net:30514 (UDP)
   # - TCP port 9598 (metrics) is exposed via ingress at vector.dataknife.net
   # - Vector automatically receives syslog on UDP 514 and parses CEF format
-  # - DNS: Point vector.dataknife.net A record to LoadBalancer external IP
