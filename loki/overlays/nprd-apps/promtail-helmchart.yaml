@@ -15,8 +15,8 @@ spec:
     # Promtail Configuration - Latest stable version 3.6.2 (matches Loki)
     config:
       clients:
-        # Using loki-gateway for microservices mode (routes to distributor)
-        - url: http://loki-gateway:80/loki/api/v1/push
+        # Using distributor directly for microservices mode
+        - url: http://loki-distributor:3100/loki/api/v1/push
       snippets:
         scrapeConfigs: |
           - job_name: kubernetes-pods

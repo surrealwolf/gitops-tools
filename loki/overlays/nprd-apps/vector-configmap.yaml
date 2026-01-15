@@ -13,7 +13,7 @@ metadata:
     component: syslog
     managed-by: gitops
 data:
-  vector.yaml: |
+  vector.yaml: |-
     # Vector Configuration for UniFi CEF Syslog Ingestion
     
     # Syslog Source - Receives UDP syslog on port 514
@@ -21,8 +21,6 @@ data:
     type = "syslog"
     mode = "udp"
     address = "0.0.0.0:514"
-    # Parse syslog RFC 3164 or RFC 5424 format
-    # UniFi sends CEF wrapped in syslog headers
     
     # Transform - Parse CEF format from syslog message
     [transforms.parse_cef]
@@ -30,34 +28,13 @@ data:
     inputs = ["syslog_udp"]
     source = '''
       # Extract CEF payload from syslog message
-      # The CEF message is in the syslog message field
       cef_message = string!(.message)
       
       # Check if message contains CEF format
       if match(cef_message, r'^CEF:') {
         # Parse CEF format: CEF:Version|Device Vendor|Device Product|Device Version|Signature ID|Name|Severity|Extension
-        # Example: CEF:0|Ubiquiti|UniFi|7.4.162|USG|Firewall|5|src=192.168.1.100 dst=192.168.1.200
-        
-        # Extract CEF version (first field after CEF:)
-        cef_version_match = match(cef_message, r'^CEF:(\d+)')
-        if cef_version_match != null {
-          .cef_version = cef_version_match.captures[0]
-        }
-        
-        # Split by | to get fields (CEF uses | as delimiter)
         parts = split(cef_message, "|")
         if length(parts) >= 7 {
-          # CEF fields: parts[0] is "CEF:0", parts[1] is vendor, etc.
-          # Handle the first part which is "CEF:version"
-          first_part = parts[0]
-          if contains(first_part, ":") {
-            # Extract version from "CEF:0"
-            version_parts = split(first_part, ":")
-            if length(version_parts) == 2 {
-              .cef_version = version_parts[1]
-            }
-          }
-          
           # Extract CEF standard fields
           if length(parts) > 1 { .device_vendor = parts[1] ?? "" }
           if length(parts) > 2 { .device_product = parts[2] ?? "" }
@@ -68,34 +45,13 @@ data:
             severity_str = parts[6] ?? "0"
             .severity = to_int(severity_str)
           }
-          
-          # Parse extension fields (7th field and beyond)
-          if length(parts) > 7 {
-            extension = join(slice(parts, 7, length(parts)), "|")
-            # Parse key=value pairs (space-separated)
-            pairs = split(extension, " ")
-            for pair in pairs {
-              if contains(pair, "=") {
-                kv = split(pair, "=")
-                if length(kv) == 2 {
-                  key = kv[0]
-                  value = kv[1]
-                  # Add extension fields to root
-                  .[key] = value
-                }
-              }
-            }
-          }
         }
-        
-        # Add source label for filtering
         .source = "unifi-cef"
       }
       
       # Preserve syslog fields
       if exists(.hostname) { .syslog_hostname = .hostname }
       if exists(.facility) { .syslog_facility = .facility }
-      if exists(.severity) { .syslog_severity = .severity }
       
       # Set Loki labels
       .source_type = "syslog"
@@ -103,19 +59,13 @@ data:
     '''
     
     # Sink - Forward to Loki
-    # Using loki-gateway for microservices mode (routes to distributor)
     [sinks.loki]
     type = "loki"
     inputs = ["parse_cef"]
-    endpoint = "http://loki-gateway:80"
+    endpoint = "http://loki-distributor:3100"
     encoding.codec = "json"
-    
-    # Loki labels for indexing
-    # Note: Vector 0.38.0 uses static labels or field references
     labels = {
       namespace = "unifi",
       app = "unifi-cef"
     }
-    
-    # Remove internal fields before sending
     remove_label_fields = true

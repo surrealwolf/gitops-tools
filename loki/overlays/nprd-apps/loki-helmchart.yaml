@@ -111,12 +111,10 @@ spec:
         # Recommended: 250GB for safety margin
     
     # Gateway configuration (for ingress and routing)
+    # Disabled - using custom ingress and direct service access
     gateway:
-      enabled: true
-      replicas: 1
-      service:
-        type: ClusterIP
-        port: 80
+      enabled: false
+      replicas: 0
     
     # Disable other deployment modes to avoid conflicts
     singleBinary:

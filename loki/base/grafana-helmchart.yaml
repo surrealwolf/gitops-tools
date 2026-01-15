@@ -34,18 +34,7 @@ spec:
       type: ClusterIP
       port: 80
     ingress:
-      enabled: false  # Enable in overlay for cluster-specific host
-      ingressClassName: nginx
-      annotations:
-        nginx.ingress.kubernetes.io/ssl-redirect: "true"
-      hosts:
-        - grafana.dataknife.net
-      path: /
-      pathType: Prefix
-      tls:
-        - secretName: wildcard-dataknife-net-tls
-          hosts:
-            - grafana.dataknife.net
+      enabled: false  # Disabled - using custom ingress in overlay
     # Datasources configuration
     datasources:
       datasources.yaml:
