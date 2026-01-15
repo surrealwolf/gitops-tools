@@ -29,39 +29,63 @@ spec:
     loki:
       # Storage configuration
       storage:
-        type: filesystem
+        type: s3
         bucketNames:
           chunks: loki-chunks
           ruler: loki-ruler
-        filesystem:
-          directory: /loki/chunks
+        s3:
+          endpoint: http://loki-minio:9000
+          region: us-east-1
+          bucketNames:
+            chunks: loki-chunks
+            ruler: loki-ruler
+          accessKeyId: minioadmin
+          secretAccessKey: minioadmin
+          s3ForcePathStyle: true
       
       # Schema configuration (required)
       schemaConfig:
         configs:
           - from: "2020-10-24"
             store: tsdb
-            object_store: filesystem
+            object_store: s3
             schema: v13
             index:
               prefix: index_
               period: 24h
     
     # Storage configuration (top-level for chart compatibility)
+    # Using MinIO as S3-compatible object storage for microservices mode
     storage:
-      type: filesystem
+      type: s3
       bucketNames:
         chunks: loki-chunks
         ruler: loki-ruler
-      filesystem:
-        directory: /loki/chunks
+      s3:
+        endpoint: http://loki-minio:9000
+        region: us-east-1
+        bucketNames:
+          chunks: loki-chunks
+          ruler: loki-ruler
+        accessKeyId: minioadmin
+        secretAccessKey: minioadmin
+        s3ForcePathStyle: true
     
-    # Object storage configuration (required for microservices mode validation)
-    # Using filesystem as object store backend
-    objectStorage:
-      type: filesystem
-      filesystem:
-        directory: /loki/chunks
+    # MinIO configuration (local S3-compatible storage)
+    minio:
+      enabled: true
+      defaultBuckets: "loki-chunks,loki-ruler"
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 250Gi  # Sized for 2 weeks retention + growth
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
     
     # Limits configuration
     limits:
