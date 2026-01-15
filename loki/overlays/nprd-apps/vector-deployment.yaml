@@ -48,9 +48,15 @@ spec:
           limits:
             cpu: 500m
             memory: 512Mi
+        securityContext:
+          capabilities:
+            add:
+              - NET_BIND_SERVICE
+          runAsNonRoot: false
+          runAsUser: 0
         env:
         - name: VECTOR_CONFIG
-          value: /etc/vector/vector.toml
+          value: /etc/vector/vector.yaml
         livenessProbe:
           httpGet:
             path: /health
@@ -69,11 +75,7 @@ spec:
           name: vector-config
       - name: data
         emptyDir: {}
-      # Security context
-      # Note: UDP port 514 is privileged, requires NET_BIND_SERVICE capability
+      # Security context at pod level (capabilities are at container level)
       securityContext:
         runAsNonRoot: false
         runAsUser: 0
-        capabilities:
-          add:
-            - NET_BIND_SERVICE

@@ -13,49 +13,54 @@ metadata:
     component: syslog
     managed-by: gitops
 data:
-  vector.toml: |
+  vector.yaml: |
     # Vector Configuration for UniFi CEF Syslog Ingestion
     
-    [sources.syslog_udp]
-    type = "syslog"
-    mode = "udp"
-    address = "0.0.0.0:514"
+    sources:
+      syslog_udp:
+        type: syslog
+        mode: udp
+        address: "0.0.0.0:514"
     
-    [transforms.parse_cef]
-    type = "remap"
-    inputs = ["syslog_udp"]
-    source = '''
-      cef_message = string!(.message)
-      if match(cef_message, r'^CEF:') {
-        parts = split(cef_message, "|")
-        if length(parts) >= 7 {
-          if length(parts) > 1 { .device_vendor = parts[1] ?? "" }
-          if length(parts) > 2 { .device_product = parts[2] ?? "" }
-          if length(parts) > 3 { .device_version = parts[3] ?? "" }
-          if length(parts) > 4 { .signature_id = parts[4] ?? "" }
-          if length(parts) > 5 { .cef_name = parts[5] ?? "" }
-          if length(parts) > 6 {
-            severity_str = parts[6] ?? "0"
-            .severity = to_int(severity_str)
+    transforms:
+      parse_cef:
+        type: remap
+        inputs:
+          - syslog_udp
+        source: |
+          cef_message = string!(.message)
+          if match(cef_message, r'^CEF:') {
+            parts = split(cef_message, "|")
+            if length(parts) >= 7 {
+              if length(parts) > 1 { .device_vendor = parts[1] ?? "" }
+              if length(parts) > 2 { .device_product = parts[2] ?? "" }
+              if length(parts) > 3 { .device_version = parts[3] ?? "" }
+              if length(parts) > 4 { .signature_id = parts[4] ?? "" }
+              if length(parts) > 5 { .cef_name = parts[5] ?? "" }
+              if length(parts) > 6 {
+                severity_str = parts[6] ?? "0"
+                .severity = to_int(severity_str)
+              }
+            }
+            .source = "unifi-cef"
           }
-        }
-        .source = "unifi-cef"
-      }
-      if exists(.hostname) { .syslog_hostname = .hostname }
-      if exists(.facility) { .syslog_facility = .facility }
-      .source_type = "syslog"
-      .format = "cef"
-    '''
+          if exists(.hostname) { .syslog_hostname = .hostname }
+          if exists(.facility) { .syslog_facility = .facility }
+          .source_type = "syslog"
+          .format = "cef"
     
-    [sinks.loki]
-    type = "loki"
-    inputs = ["parse_cef"]
-    endpoint = "http://loki-distributor:3100"
-    path = "/loki/api/v1/push"
-    encoding.codec = "json"
-    [sinks.loki.labels]
-    namespace = "unifi"
-    app = "unifi-cef"
-    source = "syslog"
-    format = "cef"
-    remove_label_fields = true
+    sinks:
+      loki:
+        type: loki
+        inputs:
+          - parse_cef
+        endpoint: "http://loki-distributor:3100"
+        path: "/loki/api/v1/push"
+        encoding:
+          codec: json
+        labels:
+          namespace: unifi
+          app: unifi-cef
+          source: syslog
+          format: cef
+        remove_label_fields: true
