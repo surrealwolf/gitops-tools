@@ -103,10 +103,11 @@ data:
     '''
     
     # Sink - Forward to Loki
+    # Using loki-gateway for microservices mode (routes to distributor)
     [sinks.loki]
     type = "loki"
     inputs = ["parse_cef"]
-    endpoint = "http://loki:3100"
+    endpoint = "http://loki-gateway:80"
     encoding.codec = "json"
     
     # Loki labels for indexing

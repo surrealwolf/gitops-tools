@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: vector
-        image: timberio/vector:0.38.0-alpine
+        image: vectordotdev/vector:0.36.0-alpine
         imagePullPolicy: IfNotPresent
         ports:
         - name: syslog-udp
@@ -70,7 +70,10 @@ spec:
       - name: data
         emptyDir: {}
       # Security context
+      # Note: UDP port 514 is privileged, requires NET_BIND_SERVICE capability
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
-        fsGroup: 1000
+        runAsNonRoot: false
+        runAsUser: 0
+        capabilities:
+          add:
+            - NET_BIND_SERVICE
