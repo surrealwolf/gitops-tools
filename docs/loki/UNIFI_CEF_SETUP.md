@@ -7,13 +7,20 @@ Complete guide for configuring Loki Stack to accept UniFi logs in CEF (Common Ev
 - Loki Stack is deployed and accessible
 - Grafana is accessible at `https://grafana.dataknife.net`
 - Vector syslog receiver is deployed (NodePort 30514)
+- DNS configured: `vector.dataknife.net` → cluster node IPs
 - UniFi Network Application access (to configure SIEM integration)
 
 ## Architecture
 
 ```
-UniFi Device → Syslog UDP (port 30514) → Vector Receiver → Parse CEF → Loki → Grafana
+UniFi Device → Syslog UDP (vector.dataknife.net:30514) → Vector Receiver → Parse CEF → Loki → Grafana
 ```
+
+**Service Details:**
+- **Vector Service**: NodePort type
+- **UDP Port**: 514 (internal) → 30514 (NodePort)
+- **DNS**: `vector.dataknife.net:30514` (point to cluster node IPs)
+- **Metrics**: `https://vector.dataknife.net` (via ingress, port 9598)
 
 ## Step 1: Verify Vector Syslog Receiver
 
@@ -27,6 +34,8 @@ UniFi Device → Syslog UDP (port 30514) → Vector Receiver → Parse CEF → L
    ```bash
    kubectl get svc vector-syslog -n managed-syslog
    # Should show NodePort 30514 for UDP port 514
+   # Type: NodePort
+   # Ports: 514:30514/UDP (syslog), 9598/TCP (metrics)
    ```
 
 3. **Check Vector Logs**:
@@ -44,13 +53,22 @@ UniFi Device → Syslog UDP (port 30514) → Vector Receiver → Parse CEF → L
 
 3. **Configure Syslog Server**:
    - **Enable SIEM Integration**: ✅ Yes
-   - **Syslog Server**: `<node-ip>:30514`
-     - Use any cluster node IP (worker nodes recommended)
+   - **Syslog Server**: `vector.dataknife.net:30514`
+     - **Recommended**: Use DNS name `vector.dataknife.net:30514`
+     - **Alternative**: Use direct node IP (worker nodes recommended)
      - Example: `192.168.14.113:30514`
    - **Format**: **CEF** (Common Event Format)
    - **Protocol**: UDP (default)
 
 4. **Click**: **Apply Changes** or **Save**
+
+**DNS Configuration:**
+Point `vector.dataknife.net` A records to cluster node IPs:
+- `192.168.14.113` (worker-1)
+- `192.168.14.114` (worker-2)
+- `192.168.14.115` (worker-3)
+
+This provides redundancy - if one node is unavailable, UniFi can use another.
 
 ## Step 3: Verify Log Ingestion
 
@@ -62,7 +80,11 @@ Send a test CEF message to verify Vector is receiving syslog:
 # Get a cluster node IP
 NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
 
-# Send test CEF message
+# Send test CEF message (using DNS)
+echo 'CEF:0|Ubiquiti|UniFi|7.4.162|USG|Firewall Test|5|src=192.168.1.100 dst=192.168.1.200 act=block' | \
+  nc -u vector.dataknife.net 30514
+
+# Or using direct node IP
 echo 'CEF:0|Ubiquiti|UniFi|7.4.162|USG|Firewall Test|5|src=192.168.1.100 dst=192.168.1.200 act=block' | \
   nc -u $NODE_IP 30514
 ```
@@ -89,7 +111,7 @@ kubectl logs -n managed-syslog -l app=vector,component=syslog --tail=50
 3. **Query UniFi CEF Logs**:
    ```logql
    # All UniFi CEF logs
-   {app="unifi-cef", format="cef"}
+   {app="unifi-cef", format="cef", source="syslog"}
    
    # Filter by device vendor
    {app="unifi-cef", device_vendor="Ubiquiti"}
@@ -99,6 +121,9 @@ kubectl logs -n managed-syslog -l app=vector,component=syslog --tail=50
    
    # Search for specific events
    {app="unifi-cef"} |= "Firewall"
+   
+   # Filter by namespace (all UniFi logs)
+   {namespace="unifi", app="unifi-cef"}
    ```
 
 ## Step 4: Create Grafana Dashboards
@@ -207,10 +232,13 @@ UniFi sends various event types in CEF format:
 
 2. **Verify Loki Endpoint**:
    ```bash
-   # Check if Loki service is accessible
-   kubectl get svc loki -n managed-syslog
-   kubectl port-forward -n managed-syslog svc/loki 3100:3100
+   # Check if Loki distributor service is accessible (microservices mode)
+   kubectl get svc loki-distributor -n managed-syslog
+   kubectl port-forward -n managed-syslog svc/loki-distributor 3100:3100
    curl http://localhost:3100/ready
+   
+   # Check Vector configuration
+   kubectl get configmap vector-config -n managed-syslog -o yaml
    ```
 
 3. **Check Loki Logs**:
@@ -251,14 +279,20 @@ If CEF fields are not being parsed correctly:
    {app="unifi-cef"} | line_format "{{.message}}"
    ```
 
-## Node IPs for UniFi Configuration
+## DNS and Node Configuration
 
-**Recommended (Worker Nodes):**
+**Recommended: Use DNS (vector.dataknife.net)**
+- Point `vector.dataknife.net` A records to worker node IPs:
+  - `192.168.14.113` (nprd-apps-worker-1)
+  - `192.168.14.114` (nprd-apps-worker-2)
+  - `192.168.14.115` (nprd-apps-worker-3)
+- UniFi config: `vector.dataknife.net:30514`
+- Provides redundancy - if one node fails, others are available
+
+**Alternative: Direct Node IP**
 - Check with: `kubectl get nodes -o wide`
 - Use any worker node InternalIP with port 30514
-
-**Alternative (Control Plane Nodes):**
-- Can also use control plane node IPs if needed
+- Example: `192.168.14.113:30514`
 
 ## Comparison with Graylog
 
@@ -280,10 +314,50 @@ When migrating from Graylog:
 4. **Export Important Logs** from Graylog before decommissioning
 5. **Update Dashboards** to use LogQL instead of Graylog queries
 
+## Vector Configuration
+
+The Vector configuration follows official Vector documentation:
+
+**Syslog Source:**
+- Type: `syslog`
+- Mode: `udp`
+- Address: `0.0.0.0:514`
+- Reference: [Vector Syslog Source Docs](https://vector.dev/docs/reference/configuration/sources/syslog/)
+
+**Loki Sink:**
+- Type: `loki`
+- Endpoint: `http://loki-distributor:3100`
+- Path: `/loki/api/v1/push` (explicit per docs)
+- Encoding: `json`
+- Labels: `namespace`, `app`, `source`, `format`
+- Reference: [Vector Loki Sink Docs](https://vector.dev/docs/reference/configuration/sinks/loki/)
+
+**Current Configuration:**
+```toml
+[sources.syslog_udp]
+type = "syslog"
+mode = "udp"
+address = "0.0.0.0:514"
+
+[sinks.loki]
+type = "loki"
+inputs = ["parse_cef"]
+endpoint = "http://loki-distributor:3100"
+path = "/loki/api/v1/push"
+encoding.codec = "json"
+[sinks.loki.labels]
+namespace = "unifi"
+app = "unifi-cef"
+source = "syslog"
+format = "cef"
+remove_label_fields = true
+```
+
 ## Documentation
 
 - [Vector Documentation](https://vector.dev/docs/)
 - [Vector Syslog Source](https://vector.dev/docs/reference/configuration/sources/syslog/)
+- [Vector Loki Sink](https://vector.dev/docs/reference/configuration/sinks/loki/)
 - [Vector Remap Transform](https://vector.dev/docs/reference/vrl/)
 - [Loki LogQL](https://grafana.com/docs/loki/latest/logql/)
 - [UniFi SIEM Integration](https://help.ui.com/hc/en-us/articles/33349041044119-UniFi-System-Logs-SIEM-Integration)

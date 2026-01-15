@@ -88,18 +88,12 @@ Visualization and query interface:
 Syslog receiver for external log ingestion:
 
 - **Syslog UDP**: Receives syslog on UDP port 514 (exposed via NodePort 30514)
+- **DNS Access**: `vector.dataknife.net:30514` (point DNS to cluster node IPs)
 - **CEF Parsing**: Automatically parses CEF (Common Event Format) from UniFi devices
-- **Loki Forwarding**: Forwards parsed logs to Loki with proper labels
+- **Loki Forwarding**: Forwards parsed logs to Loki distributor with proper labels
+- **Metrics**: Exposed via ingress at `https://vector.dataknife.net` (port 9598)
 - **UniFi Integration**: Configured for UniFi SIEM CEF format
-
-### Vector (Syslog Receiver)
-
-Syslog receiver for external log ingestion:
-
-- **Syslog UDP**: Receives syslog on UDP port 514 (exposed via NodePort 30514)
-- **CEF Parsing**: Automatically parses CEF (Common Event Format) from UniFi devices
-- **Loki Forwarding**: Forwards parsed logs to Loki with proper labels
-- **UniFi Integration**: Configured for UniFi SIEM CEF format
+- **Configuration**: Follows official Vector documentation patterns
 
 ## Deployment
 
@@ -152,7 +146,11 @@ Once deployed, access the services at:
 
 - **Loki API**: `https://loki.dataknife.net` (via Ingress)
   - Loki HTTP API endpoint for direct queries
-  - Grafana datasource uses internal service (`http://loki:3100`)
+  - Grafana datasource uses internal service (`http://loki-query-frontend:3100`)
+
+- **Vector Metrics**: `https://vector.dataknife.net` (via Ingress)
+  - Health and metrics endpoint (port 9598)
+  - Syslog endpoint: `vector.dataknife.net:30514` (UDP, NodePort)
 
 ## Configuration
 
@@ -322,9 +320,11 @@ source:api AND http_status_code:500
 
 The Loki Stack includes Vector as a syslog receiver for UniFi CEF format logs:
 
-- **NodePort Service**: Exposes UDP port 30514 for external UniFi access
+- **Service Type**: NodePort (UDP port 30514 for external access)
+- **DNS Access**: `vector.dataknife.net:30514` (point DNS to cluster node IPs)
 - **CEF Parsing**: Automatically parses CEF format and extracts fields
-- **Automatic Forwarding**: Forwards to Loki with proper labels for querying
+- **Loki Integration**: Forwards to Loki distributor with labels (`namespace=unifi`, `app=unifi-cef`, `source=syslog`, `format=cef`)
+- **Configuration**: Follows official Vector documentation ([Syslog Source](https://vector.dev/docs/reference/configuration/sources/syslog/), [Loki Sink](https://vector.dev/docs/reference/configuration/sinks/loki/))
 
 See [UniFi CEF Setup Guide](docs/loki/UNIFI_CEF_SETUP.md) for detailed configuration instructions.
 
