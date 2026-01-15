@@ -10,7 +10,6 @@ resources:
   - promtail-helmchart.yaml
   - grafana-helmchart.yaml
   - loki-ingress.yaml
-  - grafana-ingress.yaml
   # Vector syslog receiver for UniFi CEF ingestion
   - vector-configmap.yaml
   - vector-deployment.yaml
