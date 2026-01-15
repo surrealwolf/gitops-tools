@@ -76,6 +76,18 @@ spec:
         type: ClusterIP
         port: 80
     
+    # Disable other deployment modes to avoid conflicts
+    singleBinary:
+      enabled: false
+    simpleScalable:
+      enabled: false
+    backend:
+      enabled: false
+    read:
+      enabled: false
+    write:
+      enabled: false
+    
     # Microservices Components - Production settings
     
     # Distributor - Handles incoming log data
