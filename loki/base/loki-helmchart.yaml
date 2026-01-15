@@ -58,6 +58,13 @@ spec:
       filesystem:
         directory: /loki/chunks
     
+    # Object storage configuration (required for microservices mode validation)
+    # Using filesystem as object store backend
+    objectStorage:
+      type: filesystem
+      filesystem:
+        directory: /loki/chunks
+    
     # Limits configuration
     limits:
       retention_period: 168h  # 7 days base retention

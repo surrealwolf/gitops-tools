@@ -56,6 +56,13 @@ spec:
       filesystem:
         directory: /loki/chunks
     
+    # Object storage configuration (required for microservices mode validation)
+    # Using filesystem as object store backend
+    objectStorage:
+      type: filesystem
+      filesystem:
+        directory: /loki/chunks
+    
     # Limits configuration
     limits:
       retention_period: 336h  # 14 days retention for nprd-apps
