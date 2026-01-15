@@ -1,7 +1,8 @@
 # Loki Helm Chart Configuration - nprd-apps Overlay
 #
 # Cluster-specific configuration for nprd-apps cluster
-# This overrides base configuration with production-ready settings
+# Microservices mode for production workloads
+# Documentation: https://grafana.com/docs/loki/latest/get-started/deployment-modes/#microservices-mode
 #
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -14,8 +15,8 @@ spec:
   targetNamespace: managed-syslog
   valuesContent: |-
     # Loki Configuration - Latest stable version 3.6.2
-    # Single Binary (Monolithic) mode - recommended for small to medium deployments
-    deploymentMode: SingleBinary
+    # Microservices mode - recommended for production workloads requiring high availability
+    deploymentMode: MicroServices
     
     # Authentication
     auth_enabled: false
@@ -23,13 +24,6 @@ spec:
     # Common configuration
     commonConfig:
       replication_factor: 1
-    
-    # Storage configuration (required by chart template)
-    loki:
-      storage:
-        bucketNames:
-          chunks: loki-chunks
-          ruler: loki-ruler
     
     # Storage configuration
     storage:
@@ -39,44 +33,6 @@ spec:
         ruler: loki-ruler
       filesystem:
         directory: /loki/chunks
-    
-    # Persistence
-    persistence:
-      enabled: true
-      storageClass: ""
-      size: 250Gi  # Sized for 2 weeks retention + growth
-      # Storage sizing:
-      # Base: 2 UniFi instances @ ~250MB/day each = 7GB for 14 days
-      # With overhead: ~10.5GB
-      # Growth factor (20x): ~210GB
-      # Recommended: 250GB for safety margin
-    
-    # Single Binary configuration
-    singleBinary:
-      replicas: 1
-      storage:
-        bucketNames:
-          chunks: loki-chunks
-          ruler: loki-ruler
-      persistence:
-        enabled: true
-        storageClass: ""
-        size: 250Gi
-      resources:
-        requests:
-          cpu: 1000m
-          memory: 2Gi
-        limits:
-          cpu: 4000m
-          memory: 8Gi
-    
-    # Limits configuration
-    limits:
-      retention_period: 336h  # 14 days retention for nprd-apps
-      ingestion_rate_mb: 32  # Increased for production load
-      ingestion_burst_size_mb: 64
-      per_stream_rate_limit: 8MB
-      per_stream_rate_limit_burst: 16MB
     
     # Schema configuration
     schemaConfig:
@@ -89,19 +45,127 @@ spec:
             prefix: index_
             period: 24h
     
+    # Limits configuration
+    limits:
+      retention_period: 336h  # 14 days retention for nprd-apps
+      ingestion_rate_mb: 32  # Increased for production load
+      ingestion_burst_size_mb: 64
+      per_stream_rate_limit: 8MB
+      per_stream_rate_limit_burst: 16MB
+    
     # Compactor configuration
     compactor:
       retentionEnabled: true
       retentionDeleteDelay: 2h
       retentionDeleteWorkerCount: 150
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 250Gi  # Sized for 2 weeks retention + growth
+        # Storage sizing:
+        # Base: 2 UniFi instances @ ~250MB/day each = 7GB for 14 days
+        # With overhead: ~10.5GB
+        # Growth factor (20x): ~210GB
+        # Recommended: 250GB for safety margin
     
-    # Gateway configuration (for ingress)
+    # Gateway configuration (for ingress and routing)
     gateway:
       enabled: true
       replicas: 1
       service:
         type: ClusterIP
         port: 80
+    
+    # Microservices Components - Production settings
+    
+    # Distributor - Handles incoming log data
+    distributor:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+    
+    # Ingester - Processes and stores log data temporarily
+    ingester:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 250Gi  # Sized for 2 weeks retention + growth
+      resources:
+        requests:
+          cpu: 1000m
+          memory: 2Gi
+        limits:
+          cpu: 4000m
+          memory: 8Gi
+    
+    # Querier - Executes queries against stored log data
+    querier:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+    
+    # Query Frontend - Manages and optimizes query execution
+    queryFrontend:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+    
+    # Index Gateway - Manages indexing operations
+    indexGateway:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 20Gi
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+    
+    # Query Scheduler - Schedules query execution tasks
+    queryScheduler:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    
+    # Ruler - Evaluates alerting and recording rules
+    ruler:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 10Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
     
     # Service configuration
     service:

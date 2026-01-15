@@ -3,6 +3,7 @@
 # Deploys Loki (log aggregation) using the official Grafana Loki Helm chart
 # Official repository: https://grafana.github.io/helm-charts
 # Chart: https://github.com/grafana/helm-charts/tree/main/charts/loki
+# Documentation: https://grafana.com/docs/loki/latest/setup/install/helm/
 #
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -15,8 +16,9 @@ spec:
   targetNamespace: managed-syslog
   valuesContent: |-
     # Loki Configuration - Latest stable version 3.6.2
-    # Single Binary (Monolithic) mode - recommended for small to medium deployments
-    deploymentMode: SingleBinary
+    # Microservices mode - recommended for production workloads requiring high availability
+    # Documentation: https://grafana.com/docs/loki/latest/get-started/deployment-modes/#microservices-mode
+    deploymentMode: MicroServices
     
     # Authentication
     auth_enabled: false
@@ -24,13 +26,6 @@ spec:
     # Common configuration
     commonConfig:
       replication_factor: 1
-    
-    # Storage configuration (required by chart template)
-    loki:
-      storage:
-        bucketNames:
-          chunks: loki-chunks
-          ruler: loki-ruler
     
     # Storage configuration
     storage:
@@ -40,39 +35,6 @@ spec:
         ruler: loki-ruler
       filesystem:
         directory: /loki/chunks
-    
-    # Persistence
-    persistence:
-      enabled: true
-      storageClass: ""
-      size: 50Gi  # Base size, overlay will customize
-    
-    # Single Binary configuration
-    singleBinary:
-      replicas: 1
-      storage:
-        bucketNames:
-          chunks: loki-chunks
-          ruler: loki-ruler
-      persistence:
-        enabled: true
-        storageClass: ""
-        size: 50Gi
-      resources:
-        requests:
-          cpu: 500m
-          memory: 1Gi
-        limits:
-          cpu: 2000m
-          memory: 4Gi
-    
-    # Limits configuration
-    limits:
-      retention_period: 168h  # 7 days base retention
-      ingestion_rate_mb: 16
-      ingestion_burst_size_mb: 32
-      per_stream_rate_limit: 4MB
-      per_stream_rate_limit_burst: 8MB
     
     # Schema configuration
     schemaConfig:
@@ -85,19 +47,122 @@ spec:
             prefix: index_
             period: 24h
     
+    # Limits configuration
+    limits:
+      retention_period: 168h  # 7 days base retention
+      ingestion_rate_mb: 16
+      ingestion_burst_size_mb: 32
+      per_stream_rate_limit: 4MB
+      per_stream_rate_limit_burst: 8MB
+    
     # Compactor configuration
     compactor:
       retentionEnabled: true
       retentionDeleteDelay: 2h
       retentionDeleteWorkerCount: 150
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 50Gi
     
-    # Gateway configuration (for ingress)
+    # Gateway configuration (for ingress and routing)
     gateway:
       enabled: true
       replicas: 1
       service:
         type: ClusterIP
         port: 80
+    
+    # Microservices Components
+    
+    # Distributor - Handles incoming log data
+    distributor:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    
+    # Ingester - Processes and stores log data temporarily
+    ingester:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 50Gi  # Base size, overlay will customize
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+    
+    # Querier - Executes queries against stored log data
+    querier:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 512Mi
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+    
+    # Query Frontend - Manages and optimizes query execution
+    queryFrontend:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    
+    # Index Gateway - Manages indexing operations
+    indexGateway:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 10Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
+    
+    # Query Scheduler - Schedules query execution tasks
+    queryScheduler:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    
+    # Ruler - Evaluates alerting and recording rules
+    ruler:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: ""
+        size: 10Gi
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
     
     # Service configuration
     service:
