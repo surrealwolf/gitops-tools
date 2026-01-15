@@ -15,6 +15,51 @@ Contains:
 - `password-secret`: Graylog password encryption secret
 - `root-password-sha2`: SHA2 hash of Graylog root user password
 
+### graylog-opensearch-admin-password
+
+**IMPORTANT**: This secret requires both `username` and `password` fields. The OpenSearch operator will fail with "username or password field missing" if only `password` is provided.
+
+Contains:
+- `username`: OpenSearch admin username (typically `admin`)
+- `password`: OpenSearch admin password (random secure password)
+
+**Create the secret:**
+```bash
+# Generate a secure password
+OPENSEARCH_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+
+# Create secret with both username and password
+kubectl create secret generic graylog-opensearch-admin-password \
+  --from-literal=username=admin \
+  --from-literal=password="$OPENSEARCH_PASSWORD" \
+  -n managed-graylog
+```
+
+**Verify the secret:**
+```bash
+kubectl get secret graylog-opensearch-admin-password -n managed-graylog -o jsonpath='{.data}' | jq 'keys'
+# Should show: ["password", "username"]
+```
+
+### graylog-opensearch-admin-certs
+
+**IMPORTANT**: This secret is automatically created by `scripts/generate-opensearch-certs.sh`. Do not create manually.
+
+Contains:
+- `admin.pem`: Admin certificate for securityadmin.sh
+- `admin-key.pem`: Admin private key in PKCS8 format (required by securityadmin.sh)
+- `ca.crt`: Root CA certificate
+
+**Purpose**: Used by the OpenSearch security initialization job to run `securityadmin.sh` and create the `.opendistro_security` index.
+
+**Regenerate if needed:**
+```bash
+cd /home/lee/git/gitops-tools
+bash scripts/generate-opensearch-certs.sh
+```
+
+**Reference**: [OpenSearch Certificate Generation Documentation](https://docs.opensearch.org/latest/security/configuration/generate-certificates/)
+
 ## Setup Instructions
 
 1. **Copy the example file:**

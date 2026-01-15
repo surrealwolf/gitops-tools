@@ -19,6 +19,8 @@ resources:
   - opensearch-bootstrap-webhook-ca-bundle-job.yaml
   # Graylog secret patch job (patches StatefulSet after Helm creates it)
   - graylog-secret-patch-job.yaml
+  # OpenSearch security initialization job (runs securityadmin.sh to create .opendistro_security index)
+  - opensearch-security-init-job.yaml
   # OpenSearch CA certificate ConfigMap (for Java truststore import)
   - opensearch-ca-configmap.yaml
   # Graylog ingress (manually created - Helm chart isn't creating it)

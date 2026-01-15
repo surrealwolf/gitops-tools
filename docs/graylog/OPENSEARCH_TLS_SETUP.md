@@ -182,6 +182,88 @@ kubectl logs graylog-0 -n managed-graylog | grep -i "opensearch\|elasticsearch"
 2. Check shared volume mount: `kubectl describe pod graylog-0 -n managed-graylog | grep -A 5 "shared-data"`
 3. Verify init container has shared-data mount
 
+### Missing Index Error
+
+**Symptom**: Graylog shows "no such index []" or "missing index" errors after deployment.
+
+**Cause**: After initial deployment, Graylog's default index set must be configured before it can create indices. In some cases, the index may need to be created manually in OpenSearch first.
+
+**Solution Option 1: Configure Index Set in Graylog (Recommended)**
+
+1. Log in to Graylog web UI at `https://graylog.dataknife.net`
+2. Navigate to **System** → **Indices**
+3. Click on **"Default index set"**
+4. Configure index rotation (Daily), retention (14 days), and settings (1 shard, 0 replicas)
+5. Click **Save** - Graylog will automatically create the first index
+6. The "missing index" error should disappear after the index is created
+
+**Solution Option 2: Manually Create Index in OpenSearch**
+
+If Graylog cannot create the index automatically, create it manually in OpenSearch:
+
+1. **Get OpenSearch admin credentials:**
+   ```bash
+   # Get username and password from secret
+   OPENSEARCH_USER=$(kubectl get secret graylog-opensearch-admin-password -n managed-graylog -o jsonpath='{.data.username}' | base64 -d)
+   OPENSEARCH_PASS=$(kubectl get secret graylog-opensearch-admin-password -n managed-graylog -o jsonpath='{.data.password}' | base64 -d)
+   ```
+
+2. **Port-forward to OpenSearch service:**
+   ```bash
+   kubectl port-forward -n managed-graylog svc/graylog-opensearch 9200:9200
+   ```
+
+3. **Create the index manually (in another terminal):**
+   ```bash
+   # Create default Graylog index (graylog_0)
+   curl -X PUT "https://localhost:9200/graylog_0" \
+     -u "${OPENSEARCH_USER}:${OPENSEARCH_PASS}" \
+     -k \
+     -H "Content-Type: application/json" \
+     -d '{
+       "settings": {
+         "number_of_shards": 1,
+         "number_of_replicas": 0,
+         "index.refresh_interval": "5s"
+       }
+     }'
+   
+   # Verify index was created
+   curl -X GET "https://localhost:9200/_cat/indices?v" \
+     -u "${OPENSEARCH_USER}:${OPENSEARCH_PASS}" \
+     -k
+   ```
+
+4. **Alternative: Create index via OpenSearch pod:**
+   ```bash
+   # Exec into OpenSearch pod
+   kubectl exec -it -n managed-graylog graylog-opensearch-masters-0 -c opensearch -- bash
+   
+   # Inside the pod, create the index
+   curl -X PUT "https://localhost:9200/graylog_0" \
+     -u "admin:${OPENSEARCH_PASS}" \
+     --cacert /usr/share/opensearch/config/root-ca.pem \
+     -H "Content-Type: application/json" \
+     -d '{
+       "settings": {
+         "number_of_shards": 1,
+         "number_of_replicas": 0,
+         "index.refresh_interval": "5s"
+       }
+     }'
+   ```
+
+5. **After creating the index, configure Graylog index set:**
+   - Log in to Graylog web UI at `https://graylog.dataknife.net`
+   - Navigate to **System** → **Indices**
+   - Click on **"Default index set"**
+   - Configure rotation and retention settings
+   - Click **Save**
+
+**Note**: The index name pattern depends on your Graylog index set configuration. Default is `graylog_0`, `graylog_1`, etc. Check Graylog index set settings to determine the correct index name pattern.
+
+See `graylog-index-config.yaml` for detailed configuration settings.
+
 ## Best Practices
 
 1. **Use ConfigMaps for CA Certificates**: Store CA certificates in ConfigMaps for easy updates
@@ -196,6 +278,82 @@ kubectl logs graylog-0 -n managed-graylog | grep -i "opensearch\|elasticsearch"
 2. **Certificate Rotation**: Automate CA certificate updates when OpenSearch certificates rotate
 3. **Truststore Management**: Consider using a dedicated truststore management tool
 4. **Hostname Verification**: Re-enable hostname verification once certificates have correct hostnames
+
+## OpenSearch Certificates
+
+OpenSearch requires multiple certificates for secure communication:
+
+1. **Node Certificates**: Used for HTTP and transport layer communication
+2. **Admin Certificate**: Used by `securityadmin.sh` to initialize the `.opendistro_security` index
+
+### Certificate Generation
+
+Certificates are generated using `scripts/generate-opensearch-certs.sh`:
+
+```bash
+cd /home/lee/git/gitops-tools
+bash scripts/generate-opensearch-certs.sh
+```
+
+This script creates:
+- **Root CA**: `root-ca.pem` and `root-ca.key`
+- **Node Certificate**: `esnode.pem` and `esnode-key.pem` (for HTTP and transport)
+- **Admin Certificate**: `admin.pem` and `admin-key.pem` (PKCS8 format, for securityadmin.sh)
+
+The admin certificate key is automatically converted to PKCS8 format, which is required by `securityadmin.sh` per the [OpenSearch documentation](https://docs.opensearch.org/latest/security/configuration/generate-certificates/).
+
+### Kubernetes Secrets
+
+The script creates the following secrets:
+
+1. **`graylog-opensearch-http-certs`**: Node certificate for HTTP layer
+2. **`graylog-opensearch-transport-certs`**: Node certificate for transport layer
+3. **`graylog-opensearch-ca`**: Root CA certificate
+4. **`graylog-opensearch-admin-certs`**: Admin certificate (for securityadmin.sh)
+   - `admin.pem`: Admin certificate
+   - `admin-key.pem`: Admin key in PKCS8 format
+   - `ca.crt`: Root CA certificate
+
+### OpenSearch Admin Password Secret
+
+**IMPORTANT**: The `graylog-opensearch-admin-password` secret must contain both `username` and `password` fields. The OpenSearch operator will fail with error "username or password field missing" if only `password` is provided.
+
+**Create the secret:**
+```bash
+# Generate a secure password
+OPENSEARCH_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+
+# Create secret with both username and password
+kubectl create secret generic graylog-opensearch-admin-password \
+  --from-literal=username=admin \
+  --from-literal=password="$OPENSEARCH_PASSWORD" \
+  -n managed-graylog
+```
+
+**Verify the secret:**
+```bash
+kubectl get secret graylog-opensearch-admin-password -n managed-graylog -o jsonpath='{.data}' | jq 'keys'
+# Should show: ["password", "username"]
+```
+
+**If you only have password field, add username:**
+```bash
+kubectl patch secret graylog-opensearch-admin-password -n managed-graylog \
+  --type='json' \
+  -p="[{\"op\": \"add\", \"path\": \"/data/username\", \"value\": \"$(echo -n 'admin' | base64)\"}]"
+```
+
+## OpenSearch Security Initialization
+
+The OpenSearch operator should automatically initialize the `.opendistro_security` index, but sometimes this fails. A manual initialization job (`opensearch-security-init-job.yaml`) runs `securityadmin.sh` to create the index if needed.
+
+**Reference**: [OpenSearch Forum - Missing Index Solution](https://forum.opensearch.org/t/opensearch-deployment-with-opensearch-operator-failure-no-such-index-opendistro-security-solved/20001)
+
+The job:
+1. Waits for OpenSearch cluster to be ready
+2. Uses the admin certificate (PKCS8 format) from `graylog-opensearch-admin-certs` secret
+3. Runs `securityadmin.sh` to initialize the `.opendistro_security` index
+4. Verifies the index was created successfully
 
 ## References
 

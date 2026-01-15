@@ -55,10 +55,14 @@ spec:
           - "C=US,ST=Internal,L=Internal,O=Graylog,OU=OpenSearch,CN=graylog-opensearch"  # Reverse order (as in error)
           - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog"  # Partial match
           - "CN=graylog-opensearch*,OU=OpenSearch,O=Graylog"  # Wildcard
-        # Admin certificate DN (for operator access)
+        # Admin certificate DN (for operator access and securityadmin.sh)
+        # Node certificate (for operator)
+        # Admin certificate (for securityadmin.sh - PKCS8 format)
         adminDn:
-          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog,L=Internal,ST=Internal,C=US"
-          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog"
+          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog,L=Internal,ST=Internal,C=US"  # Node cert (operator)
+          - "CN=graylog-opensearch,OU=OpenSearch,O=Graylog"  # Node cert (operator, short)
+          - "CN=graylog-opensearch-admin,OU=OpenSearch,O=Graylog,L=Internal,ST=Internal,C=US"  # Admin cert (securityadmin.sh)
+          - "CN=graylog-opensearch-admin,OU=OpenSearch,O=Graylog"  # Admin cert (short)
   nodePools:
     - component: masters
       replicas: 1

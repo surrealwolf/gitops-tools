@@ -66,7 +66,17 @@ Cluster-specific customizations:
 The Graylog HelmChart will be deployed automatically by Fleet when:
 1. The namespace `managed-tools` exists
 2. The TLS secret `wildcard-dataknife-net-tls` exists (for ingress)
-3. Fleet syncs the GitRepo
+3. The OpenSearch admin password secret `graylog-opensearch-admin-password` exists with both `username` and `password` fields
+   ```bash
+   # Create the secret (REQUIRED: both username and password fields)
+   OPENSEARCH_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+   kubectl create secret generic graylog-opensearch-admin-password \
+     --from-literal=username=admin \
+     --from-literal=password="$OPENSEARCH_PASSWORD" \
+     -n managed-graylog
+   ```
+   **Important**: The OpenSearch operator requires both `username` and `password` fields. If only `password` exists, the operator will fail with "username or password field missing".
+4. Fleet syncs the GitRepo
 
 Monitor deployment:
 ```bash

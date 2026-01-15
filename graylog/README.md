@@ -45,7 +45,35 @@ graylog/
 
 1. **Namespace**: `managed-tools` namespace must exist
 2. **TLS Secret**: `wildcard-dataknife-net-tls` secret must exist for ingress
-3. **Fleet GitRepo**: Configured to monitor `graylog/overlays/nprd-apps`
+3. **OpenSearch Certificates**: Generate OpenSearch TLS certificates using the provided script:
+   ```bash
+   cd /home/lee/git/gitops-tools
+   bash scripts/generate-opensearch-certs.sh
+   ```
+   This creates:
+   - `graylog-opensearch-http-certs` - Node certificate for HTTP
+   - `graylog-opensearch-transport-certs` - Node certificate for transport
+   - `graylog-opensearch-ca` - Root CA certificate
+   - `graylog-opensearch-admin-certs` - Admin certificate (PKCS8 format) for securityadmin.sh
+   
+   **Note**: The admin certificate is required for the security initialization job that creates the `.opendistro_security` index.
+
+4. **OpenSearch Admin Password Secret**: `graylog-opensearch-admin-password` must exist with both `username` and `password` fields
+   ```bash
+   # Create the secret (REQUIRED: both username and password fields)
+   OPENSEARCH_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
+   kubectl create secret generic graylog-opensearch-admin-password \
+     --from-literal=username=admin \
+     --from-literal=password="$OPENSEARCH_PASSWORD" \
+     -n managed-graylog
+   ```
+   **Note**: The OpenSearch operator requires both fields. If only `password` exists, add `username`:
+   ```bash
+   kubectl patch secret graylog-opensearch-admin-password -n managed-graylog \
+     --type='json' \
+     -p="[{\"op\": \"add\", \"path\": \"/data/username\", \"value\": \"$(echo -n 'admin' | base64)\"}]"
+   ```
+5. **Fleet GitRepo**: Configured to monitor `graylog/overlays/nprd-apps`
 
 ### Fleet Configuration
 
@@ -256,6 +284,97 @@ See `graylog-index-config.yaml` for detailed documentation.
    kubectl logs -n managed-tools -l app=graylog,component=server | grep -i syslog
    ```
 
+### Missing Index Error
+
+**Symptom**: Graylog shows "no such index []" or "missing index" errors in the web UI or logs.
+
+**Cause**: After initial deployment, Graylog's default index set needs to be configured before it can create indices. This is a one-time setup required after deployment.
+
+**Solution**:
+
+1. **Configure Index Set in Graylog Web UI**:
+   - Log in to Graylog web UI at `https://graylog.dataknife.net`
+   - Navigate to **System** → **Indices**
+   - Click on **"Default index set"** (or create a new one)
+   - Configure the following:
+     - **Index Rotation**:
+       - Strategy: **Daily** (rotate index every day at midnight UTC)
+       - Max number of indices: **20** (14 days + 6 day buffer)
+     - **Index Retention**:
+       - Strategy: **Delete indices** after retention period
+       - Max age: **14 days** (2 weeks)
+       - Action: Delete closed indices older than 14 days
+     - **Index Configuration**:
+       - Shards per index: **1** (single node setup)
+       - Replicas: **0** (single node setup)
+       - Index optimization: After rotation
+   - Click **Save** to apply the configuration
+   - Graylog will automatically create the first index after saving
+
+2. **Verify Index Creation**:
+   - After saving, wait a few seconds
+   - Refresh the **System → Indices** page
+   - You should see an index created (e.g., `graylog_0` or similar)
+   - The "missing index" error should disappear
+
+3. **If Index Still Not Created - Manual Creation in OpenSearch**:
+
+   If Graylog cannot create the index automatically, create it manually in OpenSearch:
+
+   ```bash
+   # Get OpenSearch credentials
+   OPENSEARCH_USER=$(kubectl get secret graylog-opensearch-admin-password -n managed-graylog -o jsonpath='{.data.username}' | base64 -d)
+   OPENSEARCH_PASS=$(kubectl get secret graylog-opensearch-admin-password -n managed-graylog -o jsonpath='{.data.password}' | base64 -d)
+   
+   # Port-forward to OpenSearch
+   kubectl port-forward -n managed-graylog svc/graylog-opensearch 9200:9200
+   
+   # In another terminal, create the index
+   curl -X PUT "https://localhost:9200/graylog_0" \
+     -u "${OPENSEARCH_USER}:${OPENSEARCH_PASS}" \
+     -k \
+     -H "Content-Type: application/json" \
+     -d '{
+       "settings": {
+         "number_of_shards": 1,
+         "number_of_replicas": 0,
+         "index.refresh_interval": "5s"
+       }
+     }'
+   
+   # Verify index was created
+   curl -X GET "https://localhost:9200/_cat/indices?v" \
+     -u "${OPENSEARCH_USER}:${OPENSEARCH_PASS}" \
+     -k
+   ```
+
+   **Alternative: Create via OpenSearch pod:**
+   ```bash
+   # Exec into OpenSearch pod
+   kubectl exec -it -n managed-graylog graylog-opensearch-masters-0 -c opensearch -- bash
+   
+   # Inside pod, create index (replace PASSWORD with actual password)
+   curl -X PUT "https://localhost:9200/graylog_0" \
+     -u "admin:PASSWORD" \
+     --cacert /usr/share/opensearch/config/root-ca.pem \
+     -H "Content-Type: application/json" \
+     -d '{"settings": {"number_of_shards": 1, "number_of_replicas": 0}}'
+   ```
+
+   After creating the index manually, return to Graylog web UI and configure the index set as described in step 1 above.
+
+4. **Verify OpenSearch Connection**:
+   - Check OpenSearch is running and healthy:
+     ```bash
+     kubectl get pods -n managed-graylog | grep opensearch
+     kubectl logs -n managed-graylog graylog-0 | grep -i "opensearch\|index"
+     ```
+   - Verify OpenSearch connection in Graylog:
+     - System → Nodes → Click on your node → Check "Elasticsearch" section
+     - Should show "Connected" status
+
+**Note**: This configuration is documented in `graylog-index-config.yaml` and the "Index Rotation and Retention Configuration" section above.
+
 ### Logs Not Appearing in Search
 
 1. Check OpenSearch health:
@@ -266,6 +385,7 @@ See `graylog-index-config.yaml` for detailed documentation.
 2. Verify index creation:
    - Check Graylog web UI → System → Indices
    - Ensure indices are being created and rotated
+   - If no indices exist, see "Missing Index Error" section above
 
 3. Check for parsing errors:
    - Search for: `_exists_:gl2_parser_error`
