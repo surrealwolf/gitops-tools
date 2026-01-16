@@ -147,6 +147,6 @@ spec:
         memory: 1Gi
     # Image configuration
     image:
-      registry: docker.io
-      repository: grafana/promtail
+      registry: harbor.dataknife.net
+      repository: dockerhub/library/grafana/promtail
       tag: "3.6.2"  # Latest stable version (matches Loki)

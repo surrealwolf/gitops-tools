@@ -157,6 +157,6 @@ spec:
       failureThreshold: 10  # Allow more failures before marking unready
     # Image configuration
     image:
-      registry: docker.io
-      repository: grafana/promtail
+      registry: harbor.dataknife.net
+      repository: dockerhub/library/grafana/promtail
       tag: "3.6.2"  # Latest stable version (matches Loki)

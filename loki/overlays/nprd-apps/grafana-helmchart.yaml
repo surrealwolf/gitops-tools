@@ -61,5 +61,5 @@ spec:
               httpHeaderValue1: "fake"
     # Image configuration
     image:
-      repository: grafana/grafana
+      repository: harbor.dataknife.net/dockerhub/library/grafana/grafana
       tag: "11.0.0"  # Latest stable version

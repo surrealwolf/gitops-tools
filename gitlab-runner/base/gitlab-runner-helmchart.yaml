@@ -89,7 +89,7 @@ spec:
     # Image configuration
     image:
       # GitLab Runner image
-      repository: gitlab/gitlab-runner
+      repository: harbor.dataknife.net/dockerhub/library/gitlab/gitlab-runner
       tag: ""
       pullPolicy: IfNotPresent
     
