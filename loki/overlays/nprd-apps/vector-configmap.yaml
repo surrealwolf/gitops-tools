@@ -51,8 +51,10 @@ data:
             }
           }
           # Ensure cef_message is a string before using match()
-          # Use to_string() with fallback to handle boolean/null cases
-          cef_message = to_string(cef_message) ?? message_text
+          # Check type and convert if needed (handles boolean/null cases)
+          if type(cef_message) != "string" {
+            cef_message = message_text
+          }
           if match(cef_message, r'^CEF:') {
             parts = split(cef_message, "|")
             if length(parts) >= 7 {
