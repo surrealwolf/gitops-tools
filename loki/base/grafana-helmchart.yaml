@@ -49,5 +49,5 @@ spec:
               maxLines: 1000
     # Image configuration
     image:
-      repository: harbor.dataknife.net/dockerhub/library/grafana/grafana
+      repository: harbor.dataknife.net/dockerhub/grafana/grafana
       tag: "11.0.0"  # Latest stable version

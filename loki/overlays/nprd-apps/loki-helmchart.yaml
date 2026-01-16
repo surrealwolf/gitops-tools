@@ -239,5 +239,5 @@ spec:
     # Image configuration
     image:
       registry: harbor.dataknife.net
-      repository: dockerhub/library/grafana/loki
+      repository: dockerhub/grafana/loki
       tag: "3.6.2"  # Latest stable version

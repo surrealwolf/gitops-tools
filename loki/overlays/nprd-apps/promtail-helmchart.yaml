@@ -148,5 +148,5 @@ spec:
     # Image configuration
     image:
       registry: harbor.dataknife.net
-      repository: dockerhub/library/grafana/promtail
+      repository: dockerhub/grafana/promtail
       tag: "3.6.2"  # Latest stable version (matches Loki)
