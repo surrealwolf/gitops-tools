@@ -47,7 +47,4 @@ spec:
             isDefault: true
             jsonData:
               maxLines: 1000
-    # Image configuration
-    image:
-      repository: harbor.dataknife.net/dockerhub/grafana/grafana
-      tag: "11.0.0"  # Latest stable version
+    # Image configuration - using default Grafana images from Docker Hub
