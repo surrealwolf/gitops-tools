@@ -44,10 +44,10 @@ data:
           # Check if message contains CEF (might have syslog prefix)
           # Extract CEF portion if present, otherwise use full message
           cef_match = match(message_text, r'CEF:.*')
+          # Initialize cef_message to ensure it's always defined
+          cef_message = message_text
           if cef_match != null {
             cef_message = string!(cef_match)
-          } else {
-            cef_message = message_text
           }
           if match(cef_message, r'^CEF:') {
             parts = split(cef_message, "|")
