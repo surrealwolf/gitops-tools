@@ -16,10 +16,11 @@ data:
   vector.yaml: |
     # Vector Configuration for UniFi CEF Syslog Ingestion
     
-    # API disabled - using prometheus_exporter for metrics on port 9598
-    # Health checks can use /metrics endpoint from prometheus_exporter
+    # Enable API for health checks (on port 8686 to avoid conflict with prometheus_exporter)
     api:
-      enabled: false
+      enabled: true
+      address: "0.0.0.0:8686"
+      playground: false
     
     sources:
       syslog_udp:
