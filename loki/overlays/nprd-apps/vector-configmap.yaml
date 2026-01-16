@@ -47,9 +47,11 @@ data:
             # Extract CEF portion if there's a syslog prefix
             cef_match = match(message_text, r'CEF:.*')
             if cef_match != null {
-              cef_message = cef_match
+              cef_message = string!(cef_match)
             }
           }
+          # Ensure cef_message is a string before using match()
+          cef_message = string!(cef_message)
           if match(cef_message, r'^CEF:') {
             parts = split(cef_message, "|")
             if length(parts) >= 7 {
