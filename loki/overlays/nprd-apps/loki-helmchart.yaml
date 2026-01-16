@@ -27,6 +27,9 @@ spec:
     
     # Loki configuration block (required for microservices mode)
     loki:
+      # Authentication - must be set in loki block for distributed mode
+      auth_enabled: false
+      
       # Storage configuration
       storage:
         type: s3
