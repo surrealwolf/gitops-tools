@@ -20,7 +20,8 @@ UniFi Device → Syslog UDP (vector.dataknife.net:30514) → Vector Receiver →
 - **Vector Service**: NodePort type
 - **UDP Port**: 514 (internal) → 30514 (NodePort)
 - **DNS**: `vector.dataknife.net:30514` (point to cluster node IPs)
-- **Metrics**: `https://vector.dataknife.net` (via ingress, port 9598)
+- **Metrics**: `https://vector.dataknife.net/metrics` (Prometheus metrics endpoint via ingress, port 9598)
+- **Health**: API server on port 8686 (internal)
 
 ## Step 1: Verify Vector Syslog Receiver
 
@@ -272,12 +273,18 @@ If CEF fields are not being parsed correctly:
 2. **Verify CEF Format**:
    - UniFi should send CEF format when "Format: CEF" is selected
    - Test with sample message (see Step 3)
+   - Vector uses `socket` source to handle raw CEF format (not RFC-compliant syslog)
 
 3. **Check Raw Messages**:
    ```logql
    # View raw messages before parsing
    {app="unifi-cef"} | line_format "{{.message}}"
    ```
+
+4. **Verify Socket Source Configuration**:
+   - Vector uses `socket` source (not `syslog`) to accept raw UDP data
+   - This handles CEF format that may not have proper syslog headers
+   - Check config: `kubectl get configmap vector-config -n managed-syslog -o yaml`
 
 ## DNS and Node Configuration
 
@@ -318,11 +325,12 @@ When migrating from Graylog:
 
 The Vector configuration follows official Vector documentation:
 
-**Syslog Source:**
-- Type: `syslog`
+**Socket Source (Raw UDP):**
+- Type: `socket` (used instead of `syslog` to handle raw CEF format that may not conform to RFC 3164/5424)
 - Mode: `udp`
 - Address: `0.0.0.0:514`
-- Reference: [Vector Syslog Source Docs](https://vector.dev/docs/reference/configuration/sources/syslog/)
+- Framing: `newline_delimited`
+- Reference: [Vector Socket Source Docs](https://vector.dev/docs/reference/configuration/sources/socket/)
 
 **Loki Sink:**
 - Type: `loki`
@@ -333,31 +341,88 @@ The Vector configuration follows official Vector documentation:
 - Reference: [Vector Loki Sink Docs](https://vector.dev/docs/reference/configuration/sinks/loki/)
 
 **Current Configuration:**
-```toml
-[sources.syslog_udp]
-type = "syslog"
-mode = "udp"
-address = "0.0.0.0:514"
+```yaml
+sources:
+  syslog_udp:
+    type: socket
+    mode: udp
+    address: "0.0.0.0:514"
+    framing:
+      method: newline_delimited
+  
+  internal_metrics:
+    type: internal_metrics
 
-[sinks.loki]
-type = "loki"
-inputs = ["parse_cef"]
-endpoint = "http://loki-distributor:3100"
-path = "/loki/api/v1/push"
-encoding.codec = "json"
-[sinks.loki.labels]
-namespace = "unifi"
-app = "unifi-cef"
-source = "syslog"
-format = "cef"
-remove_label_fields = true
+transforms:
+  parse_cef:
+    type: remap
+    inputs:
+      - syslog_udp
+    source: |
+      # Handle raw socket data - extract message field
+      message_text = string!(.message)
+      # Check if message contains CEF (might have syslog prefix)
+      cef_message = message_text
+      if match(message_text, r'CEF:') {
+        # Extract CEF portion if there's a syslog prefix
+        cef_match = match(message_text, r'CEF:.*')
+        if cef_match != null {
+          cef_message = cef_match
+        }
+      }
+      if match(cef_message, r'^CEF:') {
+        # Parse CEF format...
+      }
+
+sinks:
+  loki:
+    type: loki
+    inputs:
+      - parse_cef
+    endpoint: "http://loki-distributor:3100"
+    path: "/loki/api/v1/push"
+    encoding:
+      codec: json
+    labels:
+      namespace: unifi
+      app: unifi-cef
+      source: syslog
+      format: cef
+    remove_label_fields: true
+  
+  prometheus_exporter:
+    type: prometheus_exporter
+    inputs:
+      - internal_metrics
+    address: "0.0.0.0:9598"
+    default_namespace: vector
 ```
+
+**Note:** Vector uses `socket` source instead of `syslog` source to handle raw CEF format that may not conform to RFC 3164/5424 syslog standards. This allows Vector to receive and parse UniFi CEF messages that may arrive without proper syslog headers.
+
+## Metrics and Monitoring
+
+Vector exposes Prometheus metrics at `https://vector.dataknife.net/metrics`:
+
+- **Metrics Endpoint**: `https://vector.dataknife.net/metrics` (Prometheus format)
+- **Health Endpoint**: API server on port 8686 (internal, used for health checks)
+- **Metrics Include**:
+  - Event counts (received, sent, dropped)
+  - Component performance metrics
+  - Buffer statistics
+  - Error rates
+
+Example metrics:
+- `vector_buffer_sent_events_total{component_id="loki"}` - Events sent to Loki
+- `vector_component_received_event_bytes_total{component_id="parse_cef"}` - Bytes processed by CEF parser
+- `vector_component_errors_total` - Error counts by component
 
 ## Documentation
 
 - [Vector Documentation](https://vector.dev/docs/)
-- [Vector Syslog Source](https://vector.dev/docs/reference/configuration/sources/syslog/)
+- [Vector Socket Source](https://vector.dev/docs/reference/configuration/sources/socket/)
 - [Vector Loki Sink](https://vector.dev/docs/reference/configuration/sinks/loki/)
+- [Vector Prometheus Exporter Sink](https://vector.dev/docs/reference/configuration/sinks/prometheus_exporter/)
 - [Vector Remap Transform](https://vector.dev/docs/reference/vrl/)
 - [Loki LogQL](https://grafana.com/docs/loki/latest/logql/)
 - [UniFi SIEM Integration](https://help.ui.com/hc/en-us/articles/33349041044119-UniFi-System-Logs-SIEM-Integration)
