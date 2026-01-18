@@ -1,0 +1,19 @@
+# Fleet configuration for Promtail base
+# This file configures the base Promtail bundle
+#
+# NOTE: This base bundle should typically NOT be deployed directly.
+# It's meant to be used by overlays (e.g., observability-agents/promtail/overlays/<cluster-name>).
+#
+# If your GitRepo monitors observability-agents/promtail/base directly:
+# - This bundle will be deployed to ALL clusters (unless you add cluster targeting)
+# - Consider monitoring cluster-specific overlays instead
+#
+# If your GitRepo monitors the root:
+# - Fleet will create separate bundles for base and overlays
+# - Overlays will use their own fleet.yaml for cluster targeting
+
+defaultNamespace: managed-syslog
+
+# Uncomment below to prevent this base bundle from being deployed
+# (only allow overlays to use it)
+# targetCustomizations: []

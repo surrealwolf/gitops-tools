@@ -1,0 +1,12 @@
+# Fleet configuration for cluster-a
+# This file configures how Fleet deploys Prometheus Agent to cluster-a
+
+defaultNamespace: managed-syslog
+
+# Target this bundle to cluster-a
+targetCustomizations:
+  - name: cluster-a
+    clusterSelector:
+      matchLabels:
+        # Update with actual cluster label for cluster-a
+        management.cattle.io/cluster-display-name: cluster-a

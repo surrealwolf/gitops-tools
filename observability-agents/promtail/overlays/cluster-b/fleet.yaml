@@ -1,0 +1,12 @@
+# Fleet configuration for cluster-b
+# This file configures how Fleet deploys Promtail to cluster-b
+
+defaultNamespace: managed-syslog
+
+# Target this bundle to cluster-b
+targetCustomizations:
+  - name: cluster-b
+    clusterSelector:
+      matchLabels:
+        # Update with actual cluster label for cluster-b
+        management.cattle.io/cluster-display-name: cluster-b

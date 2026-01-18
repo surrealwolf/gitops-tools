@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: managed-syslog
+
+resources:
+  # Base resources embedded in overlay for Fleet path resolution
+  # Note: namespace.yaml removed - managed-syslog namespace will be created by base
+  - promtail-helmchart.yaml
+
+commonLabels:
+  app: promtail
+  managed-by: gitops
+  cluster: nprd-apps

@@ -1,0 +1,84 @@
+# Prometheus Agent Helm Chart Configuration - cluster-b Overlay
+#
+# Cluster-specific configuration for cluster-b
+# Uses external endpoint to push metrics to central Prometheus on nprd-apps cluster
+#
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: prometheus-agent
+  namespace: managed-syslog
+spec:
+  chart: prometheus
+  repo: https://prometheus-community.github.io/helm-charts
+  targetNamespace: managed-syslog
+  valuesContent: |-
+    # Prometheus Agent Configuration - cluster-b
+    # Uses external endpoint to push metrics to central Prometheus
+    
+    agent:
+      enabled: true
+    
+    server:
+      enabled: false
+    
+    config:
+      global:
+        external_labels:
+          cluster: "cluster-b"
+      
+      # External Prometheus endpoint (push to nprd-apps cluster)
+      remote_write:
+        - url: https://prometheus.dataknife.net/api/v1/write
+          queue_config:
+            max_samples_per_send: 1000
+            max_shards: 200
+            capacity: 2500
+      
+      scrape_configs:
+        - job_name: 'node-exporter'
+          kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                  - managed-syslog
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_endpoints_name]
+              regex: 'prometheus-node-exporter'
+              action: keep
+            - source_labels: [__meta_kubernetes_endpoint_address_target_name]
+              target_label: instance
+            - replacement: 'node-exporter'
+              target_label: job
+        
+        - job_name: 'kube-state-metrics'
+          kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                  - managed-syslog
+          relabel_configs:
+            - source_labels: [__meta_kubernetes_endpoints_name]
+              regex: 'prometheus-kube-state-metrics'
+              action: keep
+            - source_labels: [__meta_kubernetes_endpoint_address_target_name]
+              target_label: instance
+            - replacement: 'kube-state-metrics'
+              target_label: job
+    
+    # Resources for cluster-b
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    
+    serviceAccount:
+      create: true
+    
+    image:
+      registry: harbor.dataknife.net
+      repository: dockerhub/prom/prometheus
+      tag: "v2.51.2"
