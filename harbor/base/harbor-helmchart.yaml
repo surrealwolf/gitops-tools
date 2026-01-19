@@ -10,10 +10,7 @@ spec:
   valuesContent: |-
     expose:
       type: ingress
-      tls:
-        enabled: true
-        certSource: auto
-        # Using default ingress certificate - no explicit TLS secret needed
+      # Using default ingress certificate - no TLS section needed
       ingress:
         hosts:
           core: harbor.dataknife.net
