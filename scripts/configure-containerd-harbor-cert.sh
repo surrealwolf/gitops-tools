@@ -10,9 +10,10 @@
 
 set -e
 
-NAMESPACE="${HARBOR_NAMESPACE:-managed-tools}"
-SECRET_NAME="${HARBOR_TLS_SECRET:-wildcard-dataknife-net-tls}"
 HARBOR_URL="${HARBOR_REGISTRY_URL:-harbor.dataknife.net}"
+# Note: Harbor now uses the default ingress certificate
+# This script extracts the certificate from the Harbor endpoint or uses a provided certificate file
+CERT_FILE="${HARBOR_CERT_FILE:-}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -25,9 +26,11 @@ echo -e "${GREEN}Configure containerd for Harbor Registry${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Configuration:"
-echo "  Namespace: ${NAMESPACE}"
-echo "  Secret: ${SECRET_NAME}"
 echo "  Harbor URL: ${HARBOR_URL}"
+echo "  Certificate file: ${CERT_FILE:-<will be extracted from endpoint>}"
+echo ""
+echo "Note: Harbor now uses the default ingress certificate."
+echo "This script will extract the certificate from the Harbor endpoint if not provided."
 echo ""
 
 # Check if running as root or with sudo
@@ -59,32 +62,32 @@ echo "Certificate directory: ${CERT_DIR}"
 echo "Certificate file: ${CERT_FILE}"
 echo ""
 
-# Check if kubectl is available and secret exists
-if command -v kubectl &> /dev/null; then
-    if kubectl get secret "${SECRET_NAME}" -n "${NAMESPACE}" > /dev/null 2>&1; then
-        echo -e "${GREEN}✓ Secret found in Kubernetes${NC}"
-        
-        # Extract certificate
-        echo "Extracting certificate from Kubernetes secret..."
-        TEMP_CERT=$(mktemp)
-        kubectl get secret "${SECRET_NAME}" -n "${NAMESPACE}" -o jsonpath='{.data.tls\.crt}' | base64 -d > "${TEMP_CERT}"
-        
-        if [ ! -s "${TEMP_CERT}" ]; then
-            echo -e "${RED}Error: Failed to extract certificate${NC}"
-            rm -f "${TEMP_CERT}"
-            exit 1
-        fi
-        
-        echo -e "${GREEN}✓ Certificate extracted${NC}"
+# Extract certificate from Harbor endpoint or use provided file
+TEMP_CERT=$(mktemp)
+
+if [ -n "${CERT_FILE}" ] && [ -f "${CERT_FILE}" ]; then
+    # Use provided certificate file
+    echo "Using provided certificate file: ${CERT_FILE}"
+    cp "${CERT_FILE}" "${TEMP_CERT}"
+    echo -e "${GREEN}✓ Certificate file found${NC}"
+elif command -v openssl &> /dev/null; then
+    # Extract certificate from Harbor endpoint
+    echo "Extracting certificate from Harbor endpoint..."
+    if echo | openssl s_client -showcerts -connect "${HARBOR_URL}:443" -servername "${HARBOR_URL}" 2>/dev/null | \
+       sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > "${TEMP_CERT}" && \
+       [ -s "${TEMP_CERT}" ]; then
+        echo -e "${GREEN}✓ Certificate extracted from Harbor endpoint${NC}"
     else
-        echo -e "${YELLOW}Warning: Secret '${SECRET_NAME}' not found in namespace '${NAMESPACE}'${NC}"
-        echo -e "${YELLOW}You may need to provide the certificate file manually${NC}"
-        TEMP_CERT=""
+        echo -e "${YELLOW}Warning: Could not extract certificate from endpoint${NC}"
+        echo -e "${YELLOW}Please provide the certificate file manually using: HARBOR_CERT_FILE=/path/to/cert.crt ${0}${NC}"
+        rm -f "${TEMP_CERT}"
+        exit 1
     fi
 else
-    echo -e "${YELLOW}Warning: kubectl not available. Cannot extract certificate from secret.${NC}"
-    echo -e "${YELLOW}Please provide the certificate file manually or ensure kubectl is available${NC}"
-    TEMP_CERT=""
+    echo -e "${RED}Error: openssl not available and no certificate file provided${NC}"
+    echo -e "${RED}Please install openssl or provide certificate file using: HARBOR_CERT_FILE=/path/to/cert.crt${NC}"
+    rm -f "${TEMP_CERT}"
+    exit 1
 fi
 
 # Create certificate directory
@@ -92,17 +95,11 @@ echo "Creating certificate directory..."
 ${SUDO} mkdir -p "${CERT_DIR}"
 
 # Copy certificate
-if [ -n "${TEMP_CERT}" ] && [ -f "${TEMP_CERT}" ]; then
-    echo "Installing certificate to containerd..."
-    ${SUDO} cp "${TEMP_CERT}" "${CERT_FILE}"
-    ${SUDO} chmod 644 "${CERT_FILE}"
-    rm -f "${TEMP_CERT}"
-    echo -e "${GREEN}✓ Certificate installed to ${CERT_FILE}${NC}"
-else
-    echo -e "${YELLOW}Certificate file not available. Please manually copy the certificate to:${NC}"
-    echo -e "${YELLOW}  ${CERT_FILE}${NC}"
-    exit 1
-fi
+echo "Installing certificate to containerd..."
+${SUDO} cp "${TEMP_CERT}" "${CERT_FILE}"
+${SUDO} chmod 644 "${CERT_FILE}"
+rm -f "${TEMP_CERT}"
+echo -e "${GREEN}✓ Certificate installed to ${CERT_FILE}${NC}"
 
 # Restart containerd (if running as systemd service)
 if systemctl is-active --quiet containerd 2>/dev/null; then
