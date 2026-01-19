@@ -143,17 +143,18 @@ GitLab Runner is configured to work with the Harbor private container registry. 
 
 **1. Harbor CA Certificate Secret**
 
-The Harbor CA certificate is extracted from the wildcard certificate secret and stored in a dedicated secret for GitLab Runner:
+Since Harbor uses the default ingress certificate, the Harbor CA certificate is extracted directly from the Harbor registry endpoint and stored in a dedicated secret for GitLab Runner:
 
 ```bash
-# Sync Harbor CA certificate to GitLab Runner namespace
+# Extract Harbor CA certificate and create secret in GitLab Runner namespace
 ./scripts/sync-harbor-ca-cert.sh
 ```
 
 This script:
-- Extracts the CA certificate from `wildcard-dataknife-net-tls` secret in `managed-tools` namespace
+- Extracts the CA certificate from Harbor's registry endpoint (which uses the default ingress certificate)
 - Creates `harbor-ca-cert` secret in `managed-cicd` namespace with only `ca.crt` (no private key)
 - Prevents Docker from expecting client certificates
+- Uses `openssl` to connect to Harbor and extract the certificate chain
 
 **2. Docker Certificate Mount in Job Pods**
 
@@ -201,12 +202,14 @@ configs:
 
 #### Updating Harbor Certificate
 
-When the Harbor certificate is updated:
+When the Harbor certificate is updated (or when the default ingress certificate changes):
 
-1. **Update the Harbor CA certificate secret:**
+1. **Re-extract the Harbor CA certificate:**
    ```bash
    ./scripts/sync-harbor-ca-cert.sh
    ```
+   
+   This will automatically extract the current certificate from Harbor's endpoint.
 
 2. **Restart RKE2 services on all nodes** (required for containerd to pick up changes):
    ```bash
