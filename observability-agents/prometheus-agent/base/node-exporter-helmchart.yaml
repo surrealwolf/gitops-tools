@@ -1,0 +1,37 @@
+# Node Exporter Helm Chart Configuration - Base
+#
+# Deploys node-exporter (DaemonSet) for node-level metrics
+# Official repository: https://prometheus-community.github.io/helm-charts
+# Chart: https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-node-exporter
+#
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: prometheus-node-exporter
+  namespace: managed-syslog
+spec:
+  chart: prometheus-node-exporter
+  repo: https://prometheus-community.github.io/helm-charts
+  targetNamespace: managed-syslog
+  valuesContent: |-
+    # Node Exporter Configuration - Base
+    
+    # Resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
+    
+    # Service
+    service:
+      port: 9100
+      targetPort: 9100
+    
+    # Image configuration
+    image:
+      registry: harbor.dataknife.net
+      repository: dockerhub/prom/node-exporter
+      tag: "v1.7.0"  # Latest stable version

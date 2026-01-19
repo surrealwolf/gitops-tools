@@ -1,0 +1,25 @@
+# Kube State Metrics Helm Chart Configuration - nprd-apps Overlay
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: prometheus-kube-state-metrics
+  namespace: managed-syslog
+spec:
+  chart: kube-state-metrics
+  repo: https://prometheus-community.github.io/helm-charts
+  targetNamespace: managed-syslog
+  valuesContent: |-
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    service:
+      port: 8080
+      targetPort: 8080
+    image:
+      registry: harbor.dataknife.net
+      repository: dockerhub/registry.k8s.io/kube-state-metrics/kube-state-metrics
+      tag: "v2.10.1"
