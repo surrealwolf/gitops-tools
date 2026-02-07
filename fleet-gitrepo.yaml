@@ -10,7 +10,7 @@ spec:
     - github-runner/overlays/nprd-apps
     - gitlab-runner/overlays/nprd-apps
     - harbor/overlays/nprd-apps
-    - loki/overlays/nprd-apps
+    - grafana/overlays/nprd-apps
   # Note: Monitoring overlay directories only (not root or base)
   # This prevents Fleet from creating duplicate bundles for base and overlay
   # Each overlay contains all necessary files (copied from base)

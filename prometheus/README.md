@@ -329,5 +329,5 @@ Alerts are automatically discovered via PrometheusRule CRDs.
 
 ## See Also
 
-- [Loki Stack](../loki/README.md) - Log aggregation and visualization
+- [Grafana Stack](../grafana/README.md) - Log aggregation and visualization
 - [Base Configuration README](base/README.md)

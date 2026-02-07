@@ -14,7 +14,7 @@ spec:
   valuesContent: |-
     # Grafana Configuration - Latest stable version
     adminUser: admin
-    # adminPassword: Set via existingSecret (see secrets/loki/README.md)
+    # adminPassword: Set via existingSecret (see secrets/grafana/README.md)
     existingSecret: loki-credentials
     secretKey: adminPassword
     persistence:
