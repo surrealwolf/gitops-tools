@@ -40,9 +40,6 @@ spec:
         s3:
           endpoint: http://REPLACE_RUSTFS_HOST:30292
           region: us-east-1
-          bucketNames:
-            chunks: loki-chunks
-            ruler: loki-ruler
           accessKeyId: ${accessKeyId}
           secretAccessKey: ${secretAccessKey}
           s3ForcePathStyle: true
@@ -64,9 +61,6 @@ spec:
       s3:
         endpoint: http://REPLACE_RUSTFS_HOST:30292
         region: us-east-1
-        bucketNames:
-          chunks: loki-chunks
-          ruler: loki-ruler
         accessKeyId: ${accessKeyId}
         secretAccessKey: ${secretAccessKey}
         s3ForcePathStyle: true

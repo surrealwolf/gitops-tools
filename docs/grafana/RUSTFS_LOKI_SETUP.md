@@ -271,9 +271,6 @@ loki:
     s3:
       endpoint: http://<TRUENAS_IP>:30292
       region: us-east-1
-      bucketNames:
-        chunks: loki-chunks
-        ruler: loki-ruler
       accessKeyId: <from-secret>
       secretAccessKey: <from-secret>
       s3ForcePathStyle: true
