@@ -1,9 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: managed-syslog
-  labels:
-    name: managed-syslog
-    purpose: managed-kubernetes-tools
-    app: prometheus
-    managed-by: gitops

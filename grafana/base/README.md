@@ -13,14 +13,16 @@ grafana/
 │   ├── loki-helmchart.yaml        # Reference – overlay has RustFS S3 config
 │   ├── promtail-helmchart.yaml
 │   ├── grafana-helmchart.yaml
+│   ├── prometheus-helmchart.yaml  # Metrics (kube-prometheus-stack)
 │   └── README.md
 └── overlays/
     └── nprd-apps/                 # nprd-apps cluster overlay (deployed by Fleet)
         ├── fleet.yaml
         ├── kustomization.yaml
-        ├── loki-helmchart.yaml    # Loki Helm chart (cluster-specific, RustFS S3)
+        ├── loki-helmchart.yaml
         ├── promtail-helmchart.yaml
         ├── grafana-helmchart.yaml
+        ├── prometheus-helmchart.yaml
         └── vector-*.yaml          # Syslog receiver for UniFi CEF
 ```
 

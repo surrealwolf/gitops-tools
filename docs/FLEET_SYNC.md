@@ -106,7 +106,7 @@ kubectl delete clusterrolebinding loki-clusterrolebinding grafana-clusterrolebin
 kubectl delete job -n grafana helm-install-loki helm-install-grafana helm-install-promtail
 ```
 
-Do **not** delete `prometheus-kube-prometheus-*` resources.
+Do **not** delete ClusterRoles from other tools you still use.
 
 ---
 

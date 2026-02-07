@@ -7,7 +7,8 @@ Documentation for the Grafana stack (Loki, Grafana, Promtail, Vector) deployed v
 | Component | Purpose |
 |-----------|---------|
 | **Loki** | Log aggregation (S3 storage via RustFS on TrueNAS) |
-| **Grafana** | Visualization, dashboards, LogQL queries |
+| **Grafana** | Visualization, dashboards (LogQL + Prometheus) |
+| **Prometheus** | Metrics (kube-prometheus-stack, Grafana disabled) |
 | **Promtail** | Kubernetes pod log collection (DaemonSet) |
 | **Vector** | Syslog receiver for UniFi CEF format |
 
@@ -41,6 +42,7 @@ Use Sealed Secrets or External Secrets for production. Do not commit credentials
 |---------|-----|
 | Grafana | `https://grafana.dataknife.net` |
 | Loki API | `https://loki.dataknife.net` |
+| Prometheus | Internal: `http://prometheus-kube-prometheus-prometheus:9090` |
 | Vector metrics | `https://vector.dataknife.net/metrics` |
 | Vector syslog | `vector.dataknife.net:30514` (UDP) |
 
@@ -88,7 +90,7 @@ kubectl delete clusterrolebinding loki-clusterrolebinding grafana-clusterrolebin
 kubectl delete job -n grafana helm-install-loki helm-install-grafana helm-install-promtail
 ```
 
-Do **not** delete `prometheus-kube-prometheus-*` resources.
+Do **not** delete ClusterRoles from other tools you still use.
 
 ### Namespace ownership
 
