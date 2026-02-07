@@ -2,11 +2,11 @@
 # This file configures the base Loki bundle
 #
 # NOTE: This base bundle should typically NOT be deployed directly.
-# It's meant to be used by overlays (e.g., loki/overlays/nprd-apps).
+# It's meant to be used by overlays (e.g., grafana/overlays/nprd-apps).
 #
-# If your GitRepo monitors loki/base directly:
+# If your GitRepo monitors grafana/base directly:
 # - This bundle will be deployed to ALL clusters (unless you add cluster targeting)
-# - Consider monitoring loki/overlays/nprd-apps instead
+# - Consider monitoring grafana/overlays/nprd-apps instead
 #
 # If your GitRepo monitors the root:
 # - Fleet will create separate bundles for base and overlays

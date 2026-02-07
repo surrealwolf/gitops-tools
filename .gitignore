@@ -44,4 +44,4 @@ harbor/base/harbor-secret-patch.yaml
 # Note: harbor-helmchartconfig.yaml is now safe (no passwords) and is committed# HelmChartConfig should NOT be committed - it contains the token
 # HelmChartConfig files contain tokens and should not be committed
 **/*helmchartconfig.yaml
-secrets/loki/loki-credentials.yaml
+secrets/grafana/loki-credentials.yaml

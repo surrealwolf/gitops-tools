@@ -19,8 +19,8 @@ This directory contains comprehensive documentation for all tools and services m
 - **[Harbor Documentation](HARBOR.md)** - Harbor container registry setup and configuration
 
 ### Loki Stack
-- **[Loki Stack Documentation](../loki/README.md)** - Loki log aggregation and visualization (Loki + Promtail + Grafana)
-- **[UniFi CEF Setup](loki/UNIFI_CEF_SETUP.md)** - UniFi CEF syslog integration guide
+- **[Grafana Stack Documentation](../grafana/README.md)** - Loki log aggregation and visualization (Loki + Promtail + Grafana)
+- **[UniFi CEF Setup](grafana/UNIFI_CEF_SETUP.md)** - UniFi CEF syslog integration guide
 
 ### General
 - **[Deployment Guide](DEPLOYMENT.md)** - General deployment procedures
@@ -41,7 +41,7 @@ This directory contains comprehensive documentation for all tools and services m
 ├── github-runner/            # GitHub Actions Runner Controller
 ├── gitlab-runner/            # GitLab Runner
 ├── harbor/                   # Harbor container registry
-├── loki/                     # Loki Stack (Loki + Promtail + Grafana)
+├── grafana/                  # Grafana Stack (Loki + Promtail + Grafana)
 └── secrets/                  # Secret templates and examples
 ```
 

@@ -11,7 +11,7 @@ paths:
   - github-runner/overlays/nprd-apps
   - gitlab-runner/overlays/nprd-apps
   - harbor/overlays/nprd-apps
-  - loki/overlays/nprd-apps
+  - grafana/overlays/nprd-apps
 ```
 
 ## Why Overlay-Only Monitoring?
@@ -22,7 +22,7 @@ If Fleet monitors the root directory (`.`) or base directories:
 - Fleet creates **separate bundles** for each directory
 - Base and overlay bundles both try to deploy the same resources
 - Results in ownership conflicts and `ErrApplied` errors
-- Example: `gitops-tools-nprd-apps-loki-base` and `gitops-tools-nprd-apps-loki-overlays-nprd-apps` both deploying `loki-config`
+- Example: `gitops-tools-nprd-apps-grafana-base` and `gitops-tools-nprd-apps-grafana-overlays-nprd-apps` both deploying config
 
 ### Solution: Overlay-Only Pattern
 
@@ -66,7 +66,7 @@ Each overlay directory contains **all necessary files** (copied from base):
 │           ├── postgresql-cluster.yaml       # Copied from base
 │           └── postgresql-database.yaml      # Copied from base
 │
-└── loki/
+└── grafana/
     ├── base/                    # Base configuration (reference only)
     │   ├── kustomization.yaml
     │   ├── loki-helmchart.yaml
@@ -130,7 +130,7 @@ Fleet creates bundles with names based on the monitored path:
 
 - `github-runner/overlays/nprd-apps` → `gitops-tools-nprd-apps-github-runner-overlays-n-<hash>`
 - `harbor/overlays/nprd-apps` → `gitops-tools-nprd-apps-harbor-overlays-nprd-apps`
-- `loki/overlays/nprd-apps` → `gitops-tools-nprd-apps-loki-overlays-nprd-apps`
+- `grafana/overlays/nprd-apps` → `gitops-tools-nprd-apps-grafana-overlays-nprd-apps`
 
 ## Common Issues and Solutions
 
@@ -204,4 +204,4 @@ All tools follow the overlay-only pattern:
 - ✅ **Harbor**: Working (overlay contains all files)
 - ✅ **GitHub Runner**: Working (overlay contains all files)
 - ✅ **GitLab Runner**: Working (overlay contains all files)
-- ✅ **Loki Stack**: Working (overlay contains Helm charts and services)
+- ✅ **Grafana Stack**: Working (overlay contains Helm charts and services)

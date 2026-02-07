@@ -207,5 +207,5 @@ For clusters (poc-apps, prd-apps) that don't have direct access to nprd-apps:
 
 - [Cluster Agents Requirements](../docs/CLUSTER_AGENTS_REQUIREMENTS.md) - Detailed requirements documentation
 - [Multi-Cluster Observability](../docs/MULTI_CLUSTER_OBSERVABILITY.md) - Architecture overview
-- [Loki Stack](../loki/README.md) - Central Loki deployment
+- [Grafana Stack](../grafana/README.md) - Central Loki deployment
 - [Prometheus Stack](../prometheus/README.md) - Central Prometheus deployment

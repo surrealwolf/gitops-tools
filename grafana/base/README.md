@@ -5,7 +5,7 @@ Base configuration for Loki Stack deployment using Helm charts.
 ## Structure
 
 ```
-loki/
+grafana/
 ├── base/                          # Base Loki configuration
 │   ├── fleet.yaml                # Base Fleet config (typically not deployed directly)
 │   ├── kustomization.yaml        # Kustomize base
@@ -114,7 +114,7 @@ When replacing Graylog/OpenSearch with Loki:
 
 ## Documentation
 
-- [Loki Documentation](https://grafana.com/docs/loki/latest/)
-- [Promtail Documentation](https://grafana.com/docs/loki/latest/clients/promtail/)
-- [LogQL Documentation](https://grafana.com/docs/loki/latest/logql/)
+- [Loki Documentation](https://grafana.com/docs/grafana/latest/)
+- [Promtail Documentation](https://grafana.com/docs/grafana/latest/clients/promtail/)
+- [LogQL Documentation](https://grafana.com/docs/grafana/latest/logql/)
 - [Grafana Loki Helm Chart](https://github.com/grafana/helm-charts/tree/main/charts/loki-stack)

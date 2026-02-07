@@ -53,7 +53,7 @@ kubectl create secret generic loki-credentials \
 ## Structure
 
 ```
-loki/
+grafana/
 ├── base/                          # Base Loki Stack configuration
 │   ├── fleet.yaml                # Base Fleet config
 │   ├── kustomization.yaml        # Kustomize base
@@ -117,7 +117,7 @@ Syslog receiver for external log ingestion:
 
 1. **Namespace**: The `grafana` namespace will be created automatically
 2. **TLS Secret**: For Grafana ingress, ensure `wildcard-dataknife-net-tls` exists
-3. **Fleet GitRepo**: Configured to monitor the `loki/overlays/nprd-apps` path
+3. **Fleet GitRepo**: Configured to monitor the `grafana/overlays/nprd-apps` path
 
 ### Deployment Steps
 
@@ -323,9 +323,9 @@ source:api AND http_status_code:500
 
 ## Documentation
 
-- [Loki Documentation](https://grafana.com/docs/loki/latest/)
-- [Promtail Documentation](https://grafana.com/docs/loki/latest/clients/promtail/)
-- [LogQL Documentation](https://grafana.com/docs/loki/latest/logql/)
+- [Loki Documentation](https://grafana.com/docs/grafana/latest/)
+- [Promtail Documentation](https://grafana.com/docs/grafana/latest/clients/promtail/)
+- [LogQL Documentation](https://grafana.com/docs/grafana/latest/logql/)
 - [Grafana Loki Helm Chart](https://github.com/grafana/helm-charts/tree/main/charts/loki-stack)
 - [Grafana Documentation](https://grafana.com/docs/grafana/latest/)
 
@@ -339,12 +339,12 @@ The Loki Stack includes Vector as a syslog receiver for UniFi CEF format logs:
 - **CEF Parsing**: Automatically parses CEF format and extracts fields
 - **Loki Integration**: Forwards to Loki distributor with labels (`namespace=unifi`, `app=unifi-cef`, `source=syslog`, `format=cef`)
 - **Metrics**: Prometheus metrics available at `https://vector.dataknife.net/metrics`
-- **Configuration**: Follows official Vector documentation ([Socket Source](https://vector.dev/docs/reference/configuration/sources/socket/), [Loki Sink](https://vector.dev/docs/reference/configuration/sinks/loki/), [Prometheus Exporter Sink](https://vector.dev/docs/reference/configuration/sinks/prometheus_exporter/))
+- **Configuration**: Follows official Vector documentation ([Socket Source](https://vector.dev/docs/reference/configuration/sources/socket/), [Loki Sink](https://vector.dev/docs/reference/configuration/sinks/grafana/), [Prometheus Exporter Sink](https://vector.dev/docs/reference/configuration/sinks/prometheus_exporter/))
 
-See [UniFi CEF Setup Guide](docs/loki/UNIFI_CEF_SETUP.md) for detailed configuration instructions.
+See [UniFi CEF Setup Guide](docs/grafana/UNIFI_CEF_SETUP.md) for detailed configuration instructions.
 
 ## See Also
 
 - [Base Configuration README](base/README.md)
-- [Secrets Documentation](../secrets/loki/README.md)
-- [UniFi CEF Setup Guide](docs/loki/UNIFI_CEF_SETUP.md)
+- [Secrets Documentation](../secrets/grafana/README.md)
+- [UniFi CEF Setup Guide](docs/grafana/UNIFI_CEF_SETUP.md)

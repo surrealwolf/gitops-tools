@@ -3,11 +3,11 @@
 #
 # Fleet will use this configuration when the GitRepo monitors:
 # - The root directory (creates bundles for each directory)
-# - Or specifically the loki/overlays/nprd-apps path
+# - Or specifically the grafana/overlays/nprd-apps path
 #
-# If your GitRepo monitors loki/base, it won't see this overlay.
+# If your GitRepo monitors grafana/base, it won't see this overlay.
 # In that case, either:
-# 1. Change GitRepo to monitor loki/overlays/nprd-apps
+# 1. Change GitRepo to monitor grafana/overlays/nprd-apps
 # 2. Or change GitRepo to monitor root and use fleet.yaml for targeting
 
 defaultNamespace: grafana

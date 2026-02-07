@@ -25,7 +25,7 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed setup instructions.
 ├── harbor/          # Harbor registry deployment
 ├── github-runner/   # GitHub Actions runners
 ├── gitlab-runner/   # GitLab CI/CD runners
-├── loki/            # Loki Stack (Loki + Promtail + Grafana)
+├── grafana/         # Grafana Stack (Loki + Promtail + Grafana)
 ├── scripts/         # Setup and utility scripts
 ├── secrets/         # Secret templates and examples
 └── docs/            # Detailed documentation
