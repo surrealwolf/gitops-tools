@@ -1,9 +1,11 @@
-# Loki Helm Chart Configuration
+# Loki Helm Chart Configuration (Reference)
 #
 # Deploys Loki (log aggregation) using the official Grafana Loki Helm chart
+# Overlay customizes: RustFS endpoint, retention, resources
 # Official repository: https://grafana.github.io/helm-charts
-# Chart: https://github.com/grafana/helm-charts/tree/main/charts/loki
 # Documentation: https://grafana.com/docs/loki/latest/setup/install/helm/
+#
+# Prerequisites: RustFS with buckets loki-chunks, loki-ruler; secret loki-rustfs-credentials
 #
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -15,37 +17,35 @@ spec:
   repo: https://grafana.github.io/helm-charts
   targetNamespace: grafana
   valuesContent: |-
-    # Loki Configuration - Latest stable version 3.6.2
-    # Microservices mode (Distributed) - recommended for production workloads requiring high availability
-    # Documentation: https://grafana.com/docs/loki/latest/get-started/deployment-modes/#microservices-mode
     deploymentMode: Distributed
-    
-    # Authentication
     auth_enabled: false
     
-    # Common configuration
+    global:
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: loki-rustfs-credentials
+    
     commonConfig:
       replication_factor: 1
     
-    # Loki configuration block (required for microservices mode)
     loki:
-      # Storage configuration
+      auth_enabled: false
       storage:
         type: s3
         bucketNames:
           chunks: loki-chunks
           ruler: loki-ruler
         s3:
-          endpoint: http://loki-minio:9000
+          endpoint: http://REPLACE_RUSTFS_HOST:30292
           region: us-east-1
           bucketNames:
             chunks: loki-chunks
             ruler: loki-ruler
-          accessKeyId: minioadmin
-          secretAccessKey: minioadmin
+          accessKeyId: ${accessKeyId}
+          secretAccessKey: ${secretAccessKey}
           s3ForcePathStyle: true
-      
-      # Schema configuration (required)
       schemaConfig:
         configs:
           - from: "2020-10-24"
@@ -56,48 +56,31 @@ spec:
               prefix: index_
               period: 24h
     
-    # Storage configuration (top-level for chart compatibility)
-    # Using MinIO as S3-compatible object storage for microservices mode
     storage:
       type: s3
       bucketNames:
         chunks: loki-chunks
         ruler: loki-ruler
       s3:
-        endpoint: http://loki-minio:9000
+        endpoint: http://REPLACE_RUSTFS_HOST:30292
         region: us-east-1
         bucketNames:
           chunks: loki-chunks
           ruler: loki-ruler
-        accessKeyId: minioadmin
-        secretAccessKey: minioadmin
+        accessKeyId: ${accessKeyId}
+        secretAccessKey: ${secretAccessKey}
         s3ForcePathStyle: true
     
-    # MinIO configuration (local S3-compatible storage)
     minio:
-      enabled: true
-      defaultBuckets: "loki-chunks,loki-ruler"
-      persistence:
-        enabled: true
-        storageClass: truenas-csi-nfs
-        size: 50Gi  # Base size, overlay will customize
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
+      enabled: false
     
-    # Limits configuration
     limits:
-      retention_period: 168h  # 7 days base retention
+      retention_period: 168h  # Base 7 days; overlay customizes
       ingestion_rate_mb: 16
       ingestion_burst_size_mb: 32
       per_stream_rate_limit: 4MB
       per_stream_rate_limit_burst: 8MB
     
-    # Compactor configuration
     compactor:
       retentionEnabled: true
       retentionDeleteDelay: 2h
@@ -107,17 +90,13 @@ spec:
         storageClass: truenas-csi-nfs
         size: 50Gi
     
-    # Gateway configuration (for ingress and routing)
-    # Disabled - using custom ingress and direct service access
     gateway:
       enabled: false
       replicas: 0
     
-    # Chunks cache (memcached) - Disabled due to insufficient memory
     chunksCache:
       enabled: false
     
-    # Disable other deployment modes to avoid conflicts
     singleBinary:
       enabled: false
       replicas: 0
@@ -134,47 +113,65 @@ spec:
       enabled: false
       replicas: 0
     
-    # Microservices Components
-    
-    # Distributor - Handles incoming log data
     distributor:
       replicas: 1
       resources:
         requests:
-          cpu: 100m
-          memory: 128Mi
+          cpu: 200m
+          memory: 256Mi
         limits:
-          cpu: 500m
-          memory: 512Mi
+          cpu: 1000m
+          memory: 1Gi
     
-    # Ingester - Processes and stores log data temporarily
     ingester:
       replicas: 1
       persistence:
         enabled: true
         storageClass: truenas-csi-nfs
-        size: 50Gi  # Base size, overlay will customize
+        size: 50Gi
       resources:
         requests:
-          cpu: 200m
-          memory: 512Mi
-        limits:
           cpu: 1000m
           memory: 2Gi
+        limits:
+          cpu: 4000m
+          memory: 8Gi
     
-    # Querier - Executes queries against stored log data
     querier:
       replicas: 1
       resources:
         requests:
+          cpu: 500m
+          memory: 1Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+    
+    queryFrontend:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 1000m
+          memory: 1Gi
+    
+    indexGateway:
+      replicas: 1
+      persistence:
+        enabled: true
+        storageClass: truenas-csi-nfs
+        size: 20Gi
+      resources:
+        requests:
           cpu: 200m
           memory: 512Mi
         limits:
           cpu: 1000m
           memory: 2Gi
     
-    # Query Frontend - Manages and optimizes query execution
-    queryFrontend:
+    queryScheduler:
       replicas: 1
       resources:
         requests:
@@ -184,8 +181,7 @@ spec:
           cpu: 500m
           memory: 512Mi
     
-    # Index Gateway - Manages indexing operations
-    indexGateway:
+    ruler:
       replicas: 1
       persistence:
         enabled: true
@@ -199,39 +195,11 @@ spec:
           cpu: 500m
           memory: 1Gi
     
-    # Query Scheduler - Schedules query execution tasks
-    queryScheduler:
-      replicas: 1
-      resources:
-        requests:
-          cpu: 50m
-          memory: 64Mi
-        limits:
-          cpu: 200m
-          memory: 256Mi
-    
-    # Ruler - Evaluates alerting and recording rules
-    ruler:
-      replicas: 1
-      persistence:
-        enabled: true
-        storageClass: truenas-csi-nfs
-        size: 10Gi
-      resources:
-        requests:
-          cpu: 100m
-          memory: 128Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-    
-    # Service configuration
     service:
       type: ClusterIP
       port: 3100
     
-    # Image configuration
     image:
       registry: harbor.dataknife.net
       repository: dockerhub/grafana/loki
-      tag: "3.6.2"  # Latest stable version
+      tag: "3.6.2"

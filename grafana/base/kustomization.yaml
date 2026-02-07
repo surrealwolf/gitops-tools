@@ -8,6 +8,7 @@ resources:
   - loki-helmchart.yaml
   - promtail-helmchart.yaml
   - grafana-helmchart.yaml
+  - prometheus-helmchart.yaml
 
 commonLabels:
   app: loki

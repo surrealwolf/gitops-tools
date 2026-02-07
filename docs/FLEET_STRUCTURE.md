@@ -68,19 +68,23 @@ Each overlay directory contains **all necessary files** (copied from base):
 │
 └── grafana/
     ├── base/                    # Base configuration (reference only)
+    │   ├── fleet.yaml
     │   ├── kustomization.yaml
+    │   ├── namespace.yaml
     │   ├── loki-helmchart.yaml
     │   ├── promtail-helmchart.yaml
     │   ├── grafana-helmchart.yaml
+    │   ├── prometheus-helmchart.yaml
     │   └── README.md
     └── overlays/
         └── nprd-apps/           # Cluster-specific overlay (deployed)
-            ├── fleet.yaml       # Cluster targeting
+            ├── fleet.yaml
             ├── kustomization.yaml
-            ├── loki-helmchart.yaml  # Cluster-specific Helm values
+            ├── loki-helmchart.yaml
             ├── promtail-helmchart.yaml
             ├── grafana-helmchart.yaml
-            └── vector-syslog-service.yaml  # Syslog NodePort for UniFi CEF
+            ├── prometheus-helmchart.yaml
+            └── vector-*.yaml    # Syslog for UniFi CEF
 ```
 
 ## Key Patterns

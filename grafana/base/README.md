@@ -6,17 +6,24 @@ Base configuration for Loki Stack deployment using Helm charts.
 
 ```
 grafana/
-├── base/                          # Base Loki configuration
-│   ├── fleet.yaml                # Base Fleet config (typically not deployed directly)
-│   ├── kustomization.yaml        # Kustomize base
-│   ├── namespace.yaml            # Namespace definition
-│   ├── loki-helmchart.yaml       # Loki Stack Helm chart configuration
-│   └── README.md                 # This file
+├── base/                          # Base configuration (reference only)
+│   ├── fleet.yaml
+│   ├── kustomization.yaml
+│   ├── namespace.yaml
+│   ├── loki-helmchart.yaml        # Reference – overlay has RustFS S3 config
+│   ├── promtail-helmchart.yaml
+│   ├── grafana-helmchart.yaml
+│   ├── prometheus-helmchart.yaml  # Metrics (kube-prometheus-stack)
+│   └── README.md
 └── overlays/
-    └── nprd-apps/                 # nprd-apps cluster overlay
-        ├── fleet.yaml            # Cluster-specific Fleet config with targeting
-        ├── kustomization.yaml   # Kustomize overlay
-        └── loki-helmchart.yaml   # Override base Helm values for nprd-apps
+    └── nprd-apps/                 # nprd-apps cluster overlay (deployed by Fleet)
+        ├── fleet.yaml
+        ├── kustomization.yaml
+        ├── loki-helmchart.yaml
+        ├── promtail-helmchart.yaml
+        ├── grafana-helmchart.yaml
+        ├── prometheus-helmchart.yaml
+        └── vector-*.yaml          # Syslog receiver for UniFi CEF
 ```
 
 ## Components
@@ -29,17 +36,11 @@ The Loki Stack includes three main components:
 
 ## Configuration
 
-### Base Configuration (`loki-helmchart.yaml`)
-
-- **Loki**: Single replica with 50Gi storage (base size, overlay will customize)
-- **Promtail**: DaemonSet for collecting logs from all pods
-- **Grafana**: Single replica with 10Gi storage for dashboards
-- **Retention**: 7 days base retention (configurable in overlay)
-- **Ingress**: Disabled (enabled in overlay for cluster-specific host)
+Base files are **reference only** – Fleet deploys from the overlay. The overlay has cluster-specific config (e.g. Loki with RustFS S3).
 
 ### Loki Features
 
-- **Storage**: Filesystem-based storage (can be changed to S3-compatible in overlay)
+- **Storage**: RustFS S3-compatible (external); credentials from `loki-rustfs-credentials` secret
 - **Retention**: Configurable retention period (default 7 days)
 - **Scalability**: Can scale horizontally by increasing replicas
 - **Query Performance**: Optimized for log queries with LogQL query language

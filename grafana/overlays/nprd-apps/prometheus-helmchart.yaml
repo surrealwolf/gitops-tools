@@ -1,0 +1,69 @@
+# Prometheus Stack (kube-prometheus-stack) - nprd-apps
+#
+# Deploys Prometheus, node-exporter, kube-state-metrics for metrics.
+# Grafana is disabled - we use the Grafana from grafana-helmchart.
+#
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: prometheus
+  namespace: grafana
+spec:
+  chart: kube-prometheus-stack
+  repo: https://prometheus-community.github.io/helm-charts
+  targetNamespace: grafana
+  valuesContent: |-
+    grafana:
+      enabled: false
+    
+    prometheus:
+      prometheusSpec:
+        retention: 15d
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: truenas-csi-nfs
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 50Gi
+        resources:
+          requests:
+            cpu: 200m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+    
+    prometheus-node-exporter:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    
+    alertmanager:
+      enabled: false
+    
+    defaultRules:
+      create: true
+    
+    kubeEtcd:
+      enabled: false
+    
+    kubeControllerManager:
+      enabled: false
+    
+    kubeScheduler:
+      enabled: false

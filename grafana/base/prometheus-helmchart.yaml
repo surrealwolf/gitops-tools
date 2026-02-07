@@ -1,0 +1,22 @@
+# Prometheus Stack (Reference)
+#
+# kube-prometheus-stack: Prometheus, node-exporter, kube-state-metrics
+# Grafana disabled - use grafana-helmchart
+#
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: prometheus
+  namespace: grafana
+spec:
+  chart: kube-prometheus-stack
+  repo: https://prometheus-community.github.io/helm-charts
+  targetNamespace: grafana
+  valuesContent: |-
+    grafana:
+      enabled: false
+    prometheus:
+      prometheusSpec:
+        retention: 15d
+    alertmanager:
+      enabled: false

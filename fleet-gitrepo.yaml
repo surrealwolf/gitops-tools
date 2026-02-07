@@ -7,7 +7,7 @@ spec:
   repo: https://github.com/DataKnifeAI/gitops-tools
   branch: main
   paths:
-    - github-runner/overlays/nprd-apps
+    # github-runner/overlays/nprd-apps  # Removed - ARC AutoscalingRunnerSet blocking; add back when ARC installed
     - gitlab-runner/overlays/nprd-apps
     - harbor/overlays/nprd-apps
     - grafana/overlays/nprd-apps
