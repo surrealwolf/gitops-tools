@@ -68,7 +68,9 @@ Each overlay directory contains **all necessary files** (copied from base):
 │
 └── grafana/
     ├── base/                    # Base configuration (reference only)
+    │   ├── fleet.yaml
     │   ├── kustomization.yaml
+    │   ├── namespace.yaml
     │   ├── loki-helmchart.yaml
     │   ├── promtail-helmchart.yaml
     │   ├── grafana-helmchart.yaml

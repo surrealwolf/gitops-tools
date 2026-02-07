@@ -1,6 +1,7 @@
-# Promtail Helm Chart Configuration
+# Promtail Helm Chart Configuration (Reference)
 #
 # Deploys Promtail (log collection agent) using the official Grafana Promtail Helm chart
+# Overlay customizes: resources
 # Official repository: https://grafana.github.io/helm-charts
 # Chart: https://github.com/grafana/helm-charts/tree/main/charts/promtail
 #
@@ -96,7 +97,8 @@ spec:
                 source_labels:
                   - __meta_kubernetes_pod_label_app_kubernetes_io_name
                   - __meta_kubernetes_pod_label_app
-                  - __meta_kubernetes_pod_label_name
+                  - __meta_kubernetes_pod_label_app_kubernetes_io_component
+                  - __meta_kubernetes_pod_label_component
                   - __tmp_controller_name
                 regex: ^;*([^;]+)(;.*)?$
                 target_label: app
@@ -138,25 +140,14 @@ spec:
                 regex: (.+);(.+)
                 replacement: /var/log/pods/$1/$2/*.log
                 target_label: __path__
-    # Resources
     resources:
       requests:
-        cpu: 100m
-        memory: 128Mi
+        cpu: 200m
+        memory: 256Mi
       limits:
-        cpu: 500m
-        memory: 512Mi
-    # Readiness probe - allow Promtail to be ready even if no logs found yet
-    # This prevents Promtail from being stuck in "Not Ready" state when cluster is new
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: http-metrics
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      failureThreshold: 10  # Allow more failures before marking unready
-    # Image configuration
+        cpu: 1000m
+        memory: 1Gi
     image:
       registry: harbor.dataknife.net
       repository: dockerhub/grafana/promtail
-      tag: "3.6.2"  # Latest stable version (matches Loki)
+      tag: "3.6.2"  # Matches Loki

@@ -1,8 +1,14 @@
 # Loki Helm Chart Configuration - nprd-apps Overlay
 #
 # Cluster-specific configuration for nprd-apps cluster
-# Microservices mode for production workloads
+# Microservices mode with RustFS S3 storage (TrueNAS)
 # Documentation: https://grafana.com/docs/loki/latest/get-started/deployment-modes/#microservices-mode
+#
+# Prerequisites:
+# - RustFS deployed on TrueNAS with buckets loki-chunks, loki-ruler
+# - Secret: kubectl create secret generic loki-rustfs-credentials \
+#     --from-literal=accessKeyId='...' --from-literal=secretAccessKey='...' -n grafana
+# - Credentials are read from the secret via extraEnvFrom; no plain text in values.
 #
 apiVersion: helm.cattle.io/v1
 kind: HelmChart
@@ -14,39 +20,35 @@ spec:
   repo: https://grafana.github.io/helm-charts
   targetNamespace: grafana
   valuesContent: |-
-    # Loki Configuration - Latest stable version 3.6.2
-    # Microservices mode (Distributed) - recommended for production workloads requiring high availability
     deploymentMode: Distributed
-    
-    # Authentication
     auth_enabled: false
     
-    # Common configuration
+    global:
+      extraArgs:
+        - "-config.expand-env=true"
+      extraEnvFrom:
+        - secretRef:
+            name: loki-rustfs-credentials
+    
     commonConfig:
       replication_factor: 1
     
-    # Loki configuration block (required for microservices mode)
     loki:
-      # Authentication - must be set in loki block for distributed mode
       auth_enabled: false
-      
-      # Storage configuration
       storage:
         type: s3
         bucketNames:
           chunks: loki-chunks
           ruler: loki-ruler
         s3:
-          endpoint: http://loki-minio:9000
+          endpoint: http://192.168.9.5:30292
           region: us-east-1
           bucketNames:
             chunks: loki-chunks
             ruler: loki-ruler
-          accessKeyId: minioadmin
-          secretAccessKey: minioadmin
+          accessKeyId: ${accessKeyId}
+          secretAccessKey: ${secretAccessKey}
           s3ForcePathStyle: true
-      
-      # Schema configuration (required)
       schemaConfig:
         configs:
           - from: "2020-10-24"
@@ -57,42 +59,24 @@ spec:
               prefix: index_
               period: 24h
     
-    # Storage configuration (top-level for chart compatibility)
-    # Using MinIO as S3-compatible object storage for microservices mode
     storage:
       type: s3
       bucketNames:
         chunks: loki-chunks
         ruler: loki-ruler
       s3:
-        endpoint: http://loki-minio:9000
+        endpoint: http://192.168.9.5:30292
         region: us-east-1
         bucketNames:
           chunks: loki-chunks
           ruler: loki-ruler
-        accessKeyId: minioadmin
-        secretAccessKey: minioadmin
+        accessKeyId: ${accessKeyId}
+        secretAccessKey: ${secretAccessKey}
         s3ForcePathStyle: true
     
-    # MinIO configuration (local S3-compatible storage)
-    # Uses truenas-csi-nfs for migration from Democratic CSI (truenas-nfs)
-    # NOTE: Change accessKeyId/secretAccessKey via sealed-secrets or external-secrets for production
     minio:
-      enabled: true
-      defaultBuckets: "loki-chunks,loki-ruler"
-      persistence:
-        enabled: true
-        storageClass: truenas-csi-nfs
-        size: 250Gi  # Sized for 2 weeks retention + growth
-      resources:
-        requests:
-          cpu: 200m
-          memory: 256Mi
-        limits:
-          cpu: 1000m
-          memory: 1Gi
+      enabled: false
     
-    # Limits configuration
     limits:
       retention_period: 336h  # 14 days retention for nprd-apps
       ingestion_rate_mb: 32  # Increased for production load

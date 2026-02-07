@@ -18,13 +18,17 @@ This directory contains comprehensive documentation for all tools and services m
 ### Harbor
 - **[Harbor Documentation](HARBOR.md)** - Harbor container registry setup and configuration
 
-### Loki Stack
-- **[Grafana Stack Documentation](../grafana/README.md)** - Loki log aggregation and visualization (Loki + Promtail + Grafana)
-- **[UniFi CEF Setup](grafana/UNIFI_CEF_SETUP.md)** - UniFi CEF syslog integration guide
+### Grafana Stack (Loki, Promtail, Vector)
+- **[Grafana Stack Documentation](grafana/README.md)** - Overview, RustFS, Fleet troubleshooting, UniFi CEF
+- **[RustFS Loki Setup](grafana/RUSTFS_LOKI_SETUP.md)** - RustFS on TrueNAS for Loki S3 storage
+- **[UniFi CEF Setup](grafana/UNIFI_CEF_SETUP.md)** - UniFi CEF syslog integration
+
+### Fleet
+- **[Fleet Sync](FLEET_SYNC.md)** - Agent registration and bundle sync troubleshooting
+- **[Fleet Structure](FLEET_STRUCTURE.md)** - GitOps paths and overlay pattern
 
 ### General
 - **[Deployment Guide](DEPLOYMENT.md)** - General deployment procedures
-- **[Fleet Structure](FLEET_STRUCTURE.md)** - Fleet GitOps structure and organization
 - **[Changelog](CHANGELOG.md)** - Project changelog
 
 ## Quick Links
