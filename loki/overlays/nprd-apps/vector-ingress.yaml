@@ -1,7 +1,7 @@
-# Vector Ingress (test)
+# Vector Ingress
 #
-# Exposes Vector metrics and health endpoints for verification
-# Access Vector at https://vector-test.dataknife.net
+# Exposes Vector metrics and health endpoints via ingress for external access
+# Access Vector at https://vector.dataknife.net
 #
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -18,7 +18,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: vector-test.dataknife.net
+    - host: vector.dataknife.net
       http:
         paths:
           - path: /

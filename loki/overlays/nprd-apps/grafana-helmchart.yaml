@@ -37,7 +37,7 @@ spec:
       annotations:
         nginx.ingress.kubernetes.io/ssl-redirect: "true"
       hosts:
-        - grafana-test.dataknife.net
+        - grafana.dataknife.net
       path: /
       pathType: Prefix
       # Using default ingress certificate - no explicit TLS secret needed

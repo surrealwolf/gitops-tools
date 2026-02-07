@@ -150,17 +150,17 @@ Syslog receiver for external log ingestion:
 
 ## Access
 
-Once deployed, access the services via test ingresses (verify before switching to prod):
+Once deployed, access the services at:
 
-- **Grafana**: `https://grafana-test.dataknife.net` (via Ingress)
+- **Grafana**: `https://grafana.dataknife.net` (via Ingress)
   - Username: `admin`
   - Password: From `loki-credentials` secret in `grafana` namespace, or auto-generated (check pod logs)
 
-- **Loki API**: `https://loki-test.dataknife.net` (via Ingress)
+- **Loki API**: `https://loki.dataknife.net` (via Ingress)
   - Loki HTTP API endpoint for direct queries
   - Grafana datasource uses internal service (`http://loki-query-frontend:3100`)
 
-- **Vector Metrics**: `https://vector-test.dataknife.net/metrics` (via Ingress)
+- **Vector Metrics**: `https://vector.dataknife.net/metrics` (via Ingress)
   - Prometheus metrics endpoint (port 9598)
   - Health endpoint: API server on port 8686 (internal)
   - Syslog endpoint: `vector.dataknife.net:30514` (UDP, NodePort)
