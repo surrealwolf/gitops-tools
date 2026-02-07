@@ -10,7 +10,7 @@
 # 1. Change GitRepo to monitor observability-agents/promtail/overlays/nprd-apps
 # 2. Or change GitRepo to monitor root and use fleet.yaml for targeting
 
-defaultNamespace: managed-syslog
+defaultNamespace: grafana
 
 # Target this bundle to the nprd-apps cluster
 targetCustomizations:

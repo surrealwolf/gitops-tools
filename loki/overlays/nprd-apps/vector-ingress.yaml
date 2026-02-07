@@ -7,7 +7,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: vector
-  namespace: managed-syslog
+  namespace: grafana
   labels:
     app: vector
     component: syslog

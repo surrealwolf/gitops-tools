@@ -36,6 +36,20 @@ The Loki Stack provides a modern, cloud-native logging solution that replaces th
 - ❌ Complex analytics and aggregations (Elasticsearch is better)
 - ❌ Very high cardinality use cases (may need tuning)
 
+## Migration (grafana namespace + TrueNAS CSI)
+
+The Loki stack has been migrated to:
+- **Namespace**: `grafana` (from `managed-syslog`)
+- **Storage**: `truenas-csi-nfs` (TrueNAS CSI, replacing Democratic CSI `truenas-nfs`)
+- **Data**: Fresh start (data loss accepted for inaccessible stack)
+
+Before deploying, create the Grafana credentials secret in the new namespace:
+```bash
+kubectl create secret generic loki-credentials \
+  --from-literal=adminPassword="$(openssl rand -base64 32)" \
+  -n grafana
+```
+
 ## Structure
 
 ```
@@ -101,41 +115,37 @@ Syslog receiver for external log ingestion:
 
 ### Prerequisites
 
-1. **Namespace**: The `managed-syslog` namespace will be created automatically
+1. **Namespace**: The `grafana` namespace will be created automatically
 2. **TLS Secret**: For Grafana ingress, ensure `wildcard-dataknife-net-tls` exists
 3. **Fleet GitRepo**: Configured to monitor the `loki/overlays/nprd-apps` path
 
 ### Deployment Steps
 
-1. **Create Grafana Admin Password Secret** (optional but recommended):
+1. **Create Grafana Admin Password Secret** (recommended):
    ```bash
    GRAFANA_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
    kubectl create secret generic loki-credentials \
      --from-literal=adminPassword="$GRAFANA_PASSWORD" \
-     -n managed-syslog
+     -n grafana
    ```
 
-2. **Update Helm Chart** (if using secret):
-   - Edit `loki/overlays/nprd-apps/loki-helmchart.yaml`
-   - Uncomment the `existingSecret` and `secretKey` lines under `grafana` section
-
-3. **Deploy via Fleet**:
+2. **Deploy via Fleet**:
    - Fleet will automatically deploy when GitRepo syncs
-   - Monitor deployment: `kubectl get pods -n managed-syslog -w`
+   - Monitor deployment: `kubectl get pods -n grafana -w`
 
 4. **Verify Deployment**:
    ```bash
    # Check Helm chart
-   kubectl get helmchart -n managed-syslog
+   kubectl get helmchart -n grafana
    
    # Check pods
-   kubectl get pods -n managed-syslog
+   kubectl get pods -n grafana
    
    # Check services
-   kubectl get svc -n managed-syslog
+   kubectl get svc -n grafana
    
    # Check ingress
-   kubectl get ingress -n managed-syslog
+   kubectl get ingress -n grafana
    ```
 
 ## Access
@@ -144,7 +154,7 @@ Once deployed, access the services at:
 
 - **Grafana**: `https://grafana.dataknife.net` (via Ingress)
   - Username: `admin`
-  - Password: From `loki-credentials` secret, or auto-generated (check pod logs)
+  - Password: From `loki-credentials` secret in `grafana` namespace, or auto-generated (check pod logs)
 
 - **Loki API**: `https://loki.dataknife.net` (via Ingress)
   - Loki HTTP API endpoint for direct queries
@@ -261,54 +271,54 @@ source:api AND http_status_code:500
 
 1. Check Promtail pods:
    ```bash
-   kubectl get pods -n managed-syslog -l app=promtail
-   kubectl logs -n managed-syslog -l app=promtail
+   kubectl get pods -n grafana -l app=promtail
+   kubectl logs -n grafana -l app=promtail
    ```
 
 2. Verify Promtail has access to node logs:
    ```bash
-   kubectl describe daemonset promtail -n managed-syslog
+   kubectl describe daemonset promtail -n grafana
    ```
 
 3. Check Promtail configuration:
    ```bash
-   kubectl get configmap loki-stack-promtail -n managed-syslog -o yaml
+   kubectl get configmap loki-stack-promtail -n grafana -o yaml
    ```
 
 ### Loki Not Receiving Logs
 
 1. Check Loki service:
    ```bash
-   kubectl get svc loki -n managed-syslog
+   kubectl get svc loki -n grafana
    ```
 
 2. Test Loki endpoint:
    ```bash
-   kubectl port-forward -n managed-syslog svc/loki 3100:3100
+   kubectl port-forward -n grafana svc/loki 3100:3100
    curl http://localhost:3100/ready
    ```
 
 3. Check Loki logs:
    ```bash
-   kubectl logs -n managed-syslog -l app=loki
+   kubectl logs -n grafana -l app=loki
    ```
 
 ### Grafana Not Accessible
 
 1. Check ingress:
    ```bash
-   kubectl get ingress -n managed-syslog
-   kubectl describe ingress grafana -n managed-syslog
+   kubectl get ingress -n grafana
+   kubectl describe ingress grafana -n grafana
    ```
 
 2. Verify TLS secret exists:
    ```bash
-   kubectl get secret wildcard-dataknife-net-tls -n managed-syslog
+   kubectl get secret wildcard-dataknife-net-tls -n grafana
    ```
 
 3. Check Grafana service:
    ```bash
-   kubectl get svc loki-stack-grafana -n managed-syslog
+   kubectl get svc loki-stack-grafana -n grafana
    ```
 
 ## Documentation

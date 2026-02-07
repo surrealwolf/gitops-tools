@@ -8,11 +8,11 @@ apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
   name: promtail
-  namespace: managed-syslog
+  namespace: grafana
 spec:
   chart: promtail
   repo: https://grafana.github.io/helm-charts
-  targetNamespace: managed-syslog
+  targetNamespace: grafana
   valuesContent: |-
     # Promtail Configuration - Latest stable version 3.6.2 (matches Loki)
     config:

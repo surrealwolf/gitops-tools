@@ -61,14 +61,14 @@ The Loki Stack includes three main components:
 ## Deployment
 
 The Loki Stack HelmChart will be deployed automatically by Fleet when:
-1. The namespace `managed-syslog` exists
+1. The namespace `grafana` exists
 2. Fleet syncs the GitRepo
 
 Monitor deployment:
 ```bash
-kubectl get helmchart -n managed-syslog
-kubectl get pods -n managed-syslog
-kubectl get ingress -n managed-syslog
+kubectl get helmchart -n grafana
+kubectl get pods -n grafana
+kubectl get ingress -n grafana
 ```
 
 ## Access

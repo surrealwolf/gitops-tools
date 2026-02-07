@@ -8,11 +8,11 @@ apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
   name: loki
-  namespace: managed-syslog
+  namespace: grafana
 spec:
   chart: loki
   repo: https://grafana.github.io/helm-charts
-  targetNamespace: managed-syslog
+  targetNamespace: grafana
   valuesContent: |-
     # Loki Configuration - Latest stable version 3.6.2
     # Microservices mode (Distributed) - recommended for production workloads requiring high availability
@@ -75,12 +75,14 @@ spec:
         s3ForcePathStyle: true
     
     # MinIO configuration (local S3-compatible storage)
+    # Uses truenas-csi-nfs for migration from Democratic CSI (truenas-nfs)
+    # NOTE: Change accessKeyId/secretAccessKey via sealed-secrets or external-secrets for production
     minio:
       enabled: true
       defaultBuckets: "loki-chunks,loki-ruler"
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 250Gi  # Sized for 2 weeks retention + growth
       resources:
         requests:
@@ -105,7 +107,7 @@ spec:
       retentionDeleteWorkerCount: 150
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 250Gi  # Sized for 2 weeks retention + growth
         # Storage sizing:
         # Base: 2 UniFi instances @ ~250MB/day each = 7GB for 14 days
@@ -158,7 +160,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 250Gi  # Sized for 2 weeks retention + growth
       resources:
         requests:
@@ -195,7 +197,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 20Gi
       resources:
         requests:
@@ -221,7 +223,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 10Gi
       resources:
         requests:

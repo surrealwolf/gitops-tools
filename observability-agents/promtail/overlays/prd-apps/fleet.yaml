@@ -5,7 +5,7 @@
 # - The root directory (creates bundles for each directory)
 # - Or specifically the observability-agents/promtail/overlays/prd-apps path
 
-defaultNamespace: managed-syslog
+defaultNamespace: grafana
 
 # Target this bundle to prd-apps
 targetCustomizations:

@@ -9,11 +9,11 @@ apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
   name: loki
-  namespace: managed-syslog
+  namespace: grafana
 spec:
   chart: loki
   repo: https://grafana.github.io/helm-charts
-  targetNamespace: managed-syslog
+  targetNamespace: grafana
   valuesContent: |-
     # Loki Configuration - Latest stable version 3.6.2
     # Microservices mode (Distributed) - recommended for production workloads requiring high availability
@@ -79,7 +79,7 @@ spec:
       defaultBuckets: "loki-chunks,loki-ruler"
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 50Gi  # Base size, overlay will customize
       resources:
         requests:
@@ -104,7 +104,7 @@ spec:
       retentionDeleteWorkerCount: 150
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 50Gi
     
     # Gateway configuration (for ingress and routing)
@@ -152,7 +152,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 50Gi  # Base size, overlay will customize
       resources:
         requests:
@@ -189,7 +189,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 10Gi
       resources:
         requests:
@@ -215,7 +215,7 @@ spec:
       replicas: 1
       persistence:
         enabled: true
-        storageClass: ""
+        storageClass: truenas-csi-nfs
         size: 10Gi
       resources:
         requests:

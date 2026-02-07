@@ -7,11 +7,11 @@ apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
   name: promtail
-  namespace: managed-syslog
+  namespace: grafana
 spec:
   chart: promtail
   repo: https://grafana.github.io/helm-charts
-  targetNamespace: managed-syslog
+  targetNamespace: grafana
   valuesContent: |-
     # Promtail Configuration - nprd-apps cluster
     # Uses internal service endpoint since Loki is on the same cluster
@@ -22,7 +22,7 @@ spec:
           cluster: "nprd-apps"
       clients:
         # Internal Loki endpoint (same cluster)
-        - url: http://loki-distributor.managed-syslog.svc.cluster.local:3100/loki/api/v1/push
+        - url: http://loki-distributor.grafana.svc.cluster.local:3100/loki/api/v1/push
       snippets:
         scrapeConfigs: |
           - job_name: kubernetes-pods
