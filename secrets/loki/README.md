@@ -15,7 +15,7 @@ GRAFANA_PASSWORD=$(openssl rand -base64 32 | tr -d '\n')
 # Create the secret
 kubectl create secret generic loki-credentials \
   --from-literal=adminPassword="$GRAFANA_PASSWORD" \
-  -n managed-syslog
+  -n grafana
 ```
 
 Then update the `loki-helmchart.yaml` in the overlay to reference this secret:
@@ -59,7 +59,7 @@ If no secret is configured, Grafana will use:
 
 To retrieve the auto-generated password:
 ```bash
-kubectl get secret loki-stack-grafana -n managed-syslog -o jsonpath='{.data.admin-password}' | base64 -d
+kubectl get secret loki-stack-grafana -n grafana -o jsonpath='{.data.admin-password}' | base64 -d
 ```
 
 ## Security Best Practices

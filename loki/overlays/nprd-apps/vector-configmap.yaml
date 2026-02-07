@@ -7,7 +7,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: vector-config
-  namespace: managed-syslog
+  namespace: grafana
   labels:
     app: vector
     component: syslog

@@ -8,7 +8,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vector-syslog
-  namespace: managed-syslog
+  namespace: grafana
   labels:
     app: vector
     component: syslog

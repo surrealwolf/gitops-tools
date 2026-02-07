@@ -12,7 +12,7 @@
 # - Fleet will create separate bundles for base and overlays
 # - Overlays will use their own fleet.yaml for cluster targeting
 
-defaultNamespace: managed-syslog
+defaultNamespace: grafana
 
 # Uncomment below to prevent this base bundle from being deployed
 # (only allow overlays to use it)

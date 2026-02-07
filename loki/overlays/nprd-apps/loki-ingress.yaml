@@ -1,13 +1,13 @@
-# Loki Ingress
+# Loki Ingress (test)
 #
-# Exposes Loki API and UI via ingress for external access
-# Access Loki at https://loki.dataknife.net
+# Exposes Loki API and UI via ingress for verification
+# Access Loki at https://loki-test.dataknife.net
 #
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: loki
-  namespace: managed-syslog
+  namespace: grafana
   labels:
     app: loki
     component: loki
@@ -18,7 +18,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: loki.dataknife.net
+    - host: loki-test.dataknife.net
       http:
         paths:
           - path: /

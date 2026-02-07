@@ -6,20 +6,20 @@ apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
   name: grafana
-  namespace: managed-syslog
+  namespace: grafana
 spec:
   chart: grafana
   repo: https://grafana.github.io/helm-charts
-  targetNamespace: managed-syslog
+  targetNamespace: grafana
   valuesContent: |-
     # Grafana Configuration - Latest stable version
     adminUser: admin
     # adminPassword: Set via existingSecret (see secrets/loki/README.md)
-    # existingSecret: loki-credentials
-    # secretKey: adminPassword
+    existingSecret: loki-credentials
+    secretKey: adminPassword
     persistence:
       enabled: true
-      storageClass: ""
+      storageClass: truenas-csi-nfs
       size: 10Gi
     resources:
       requests:
@@ -37,7 +37,7 @@ spec:
       annotations:
         nginx.ingress.kubernetes.io/ssl-redirect: "true"
       hosts:
-        - grafana.dataknife.net
+        - grafana-test.dataknife.net
       path: /
       pathType: Prefix
       # Using default ingress certificate - no explicit TLS secret needed
@@ -59,7 +59,7 @@ spec:
           - name: Prometheus
             type: prometheus
             access: proxy
-            url: http://prometheus-kube-prometheus-prometheus:9090
+            url: http://prometheus-kube-prometheus-prometheus.managed-syslog.svc.cluster.local:9090
             isDefault: false
             jsonData:
               timeInterval: 30s

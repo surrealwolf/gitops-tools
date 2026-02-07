@@ -4,6 +4,6 @@ metadata:
   name: grafana
   labels:
     name: grafana
-    purpose: observability-platform
-    app: loki
+    purpose: observability-agents
+    app: promtail
     managed-by: gitops
